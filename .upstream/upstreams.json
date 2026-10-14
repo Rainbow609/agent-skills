@@ -27,6 +27,13 @@
     "dest": "upstream/titanwings/distilly",
     "license": null
   },
+  "archify": {
+    "repo": "https://github.com/tt-a1i/archify",
+    "branch": "main",
+    "subpath": "archify",
+    "dest": "upstream/tt-a1i/archify",
+    "license": "upstream/tt-a1i/LICENSE"
+  },
   "khazix-skills": {
     "repo": "https://github.com/KKKKhazix/khazix-skills",
     "branch": "main",
