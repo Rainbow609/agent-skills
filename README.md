@@ -17,6 +17,7 @@ agent-skills/
 │   ├── docker/skills/       #   Docker 官方 11 个容器技能
 │   ├── titanwings/distilly/ #   Distilly：把"某人怎么想"蒸馏成可复用技能（单技能整仓，dot-skill 分支）
 │   ├── KKKKhazix/khazix-skills/          #   数字生命卡兹克 6 技能（leader/neat-freak/khazix-writer 等，整仓）
+│   ├── tt-a1i/archify/      #   Archify：想法/架构→交互式 HTML 图表（17M 自包含技能）
 │   └── linhay/harmony-next.skills/       #   HarmonyOS 离线知识库 72M
 ├── snapshot/                # 无 git 源的快照（不参与周更，手动刷新）
 │   ├── openspec/            #   openspec-* 8 个（openspec CLI 模板，2026-10-14 采）
@@ -56,6 +57,7 @@ npx skills add Rainbow609/agent-skills -g
 | `upstream/docker/skills` | [docker/skills](https://github.com/docker/skills)（Apache-2.0，见其 LICENSE） | 周更 PR |
 | `upstream/titanwings/distilly` | [titanwings/distilly](https://github.com/titanwings/distilly)（MIT，单技能整仓形态，SKILL.md+prompts+tools 自包含） | 周更 PR |
 | `upstream/KKKKhazix/khazix-skills` | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills)（MIT，6 技能根级平铺整仓） | 周更 PR |
+| `upstream/tt-a1i/archify` | [tt-a1i/archify](https://github.com/tt-a1i/archify)（MIT，仅取 `archify/` 技能子目录） | 周更 PR |
 | `upstream/linhay/harmony-next.skills` | [linhay/harmony-next.skills](https://github.com/linhay/harmony-next.skills)（仓库页标 MIT，未附 LICENSE 文件） | 周更 PR |
 | `snapshot/openspec` | openspec CLI（npm）模板快照，2026-10-14 采集 | 手动（`openspec update` 后拷回） |
 | `snapshot/huawei-hmos` | 华为官方 DevEco 技能库（`devecocli skills add`）快照，2026-10-14 采集 | 手动（devecocli 更新后拷回） |
