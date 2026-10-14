@@ -13,6 +13,13 @@
     "dest": "upstream/DietrichGebert/ponytail",
     "license": "upstream/DietrichGebert/LICENSE"
   },
+  "docker-skills": {
+    "repo": "https://github.com/docker/skills",
+    "branch": "main",
+    "subpath": "skills",
+    "dest": "upstream/docker/skills",
+    "license": "upstream/docker/LICENSE"
+  },
   "harmony-next": {
     "repo": "https://github.com/linhay/harmony-next.skills",
     "branch": "master",
