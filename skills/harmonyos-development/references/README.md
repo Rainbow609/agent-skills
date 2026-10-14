@@ -19,6 +19,7 @@ The root `SKILL.md` remains the discovery entry. These files are loaded only whe
 | Permissions and privacy prompts | `permissions.md` | `../examples/permission-request.ets` |
 | Build, CI, signing, packaging, release | `build-sign-release.md` | `platform-baseline.md` |
 | Performance and large lists | `performance.md` | `../examples/lazyforeach-list.ets` |
+| Jank investigation, E2E stress test, debug instrumentation gating | `../recipes/perf-stress-testing.md` | `performance.md` |
 
 ## Production default
 

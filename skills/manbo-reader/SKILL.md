@@ -7,7 +7,8 @@ description: >
   reader pages (ComicReaderPage/ComicKitReaderPage), ebook flip pages, third_party
   reader-kit, native libs (libpagecurl/libcomic_zip/libavifdec), taskpool workers,
   storage managers, the web/ activation backend, or cloud sync. Triggers: manbo-reader,
-  纸飞机, 漫播漫画, 漫画源, 图源 service, 包子漫画/拷贝漫画 style source, PageFlip 阅读器.
+  纸飞机, 漫播漫画, 漫画源, 图源 service, 包子漫画/拷贝漫画 style source, PageFlip 阅读器,
+  书架卡顿/性能压测/埋桩（perf/ 目录、ShelfTracer、压测播种）.
 ---
 
 # manbo-reader 项目约定
@@ -104,6 +105,26 @@ cloud/cloud.md                      # 华为端云同步（数据云同步服务
 - 构建走 hvigor（DevEco Studio 或 `hvigorw assembleHap`）；真机日志用 hilog 按 `XXX_TAG` 过滤。
 - 崩溃/冻屏/泄漏日志分析用已安装的华为 DFX 技能：`hmos-jscrash-analysis`、`hmos-cppcrash-analysis`、
   `hmos-appfreeze-analysis`、`hmos-memleak-analysis`；UI 测试用 `hmos-instrument-test` / `harmonyos-device-testing`。
+
+## 性能压测与埋桩（perf/）
+
+- 埋桩集中在 `perf/`：`ShelfTracer.ets`（HiTraceMeter 官方打点 + hilog 耗时，调用点全部包在
+  `if (DEBUG) {}`）、`PerfProbeConfig.ets`（`PERF_PROBE_ENABLED = DEBUG`，EntryAbility 周期 dump 计数）、
+  `ShelfStressSeed.ets`（幂等播种器）。已覆盖书架 7 个热点（refreshBookshelfData、getBookshelfData、
+  ShelfView.onListChanged、网格分批渲染/loadMore、DataSource.reloadData）。
+- 压测入口：`hdc shell aa start -b com.itling.manbo -a EntryAbility --pi stress_count <N>`；
+  E2E 用 `uitest uiInput fling` + `hitrace --trace_begin app` 采帧（通用方法见
+  `harmonyos-development/recipes/perf-stress-testing.md`）。
+- 🌟 日志级别用 INFO 不用 COMMERCIAL：HVD 模拟器是 log/eng 版，阈值 INFO，COMMERCIAL 会被丢。
+- 🌟 播种文件命名必须以字母结尾且互不相同（`groupComics` 的 stripVolumeSuffix 会把数字尾巴剥掉
+  合成一张卡）；散本必须放下载目录根部，放子文件夹会被并成文件夹卡。
+- 🌟 release 裁剪真相（ark_disasm 验证过）：ArkTS 无条件编译，具名 `import { DEBUG }` 只是消除了
+  属性查找，编译器不跨模块常量折叠——release 里埋桩退化为「外部变量读取 + 恒假分支」，运行时零副作用
+  但字节码仍在。真要物理剔除需自定义 hvigor 插件按 buildMode 排除 perf/ 源码，当前不值得。
+- 2026-10 压测结论（2500+ 条目，Pura 90 Pro 模拟器）：`refreshBookshelfData` 主线程 O(n) 全量装配
+  随书量线性恶化（415 本 63ms → 1254 本 156ms，且 onPageShow/封面更新都触发）；「本地-全部」网格
+  每批 36 张重装饰卡片上屏与 52–215ms jank 帧密集交替。修复方向=增量刷新/移出主线程 + 减批大小/
+  降卡片装饰层级；数值需真机复核（模拟器无 GLES 3.1）。
 
 ## 代码风格速记
 
