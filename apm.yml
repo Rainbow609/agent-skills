@@ -1,0 +1,4 @@
+name: agent-skills
+version: "2026.10.14"
+description: 个人用户层技能/智能体单一真源：88 个技能（自有 7 + 上游 vendor 64 + 快照 17）与 12 个智能体定义，供 APM 跨 agent 分发。
+author: Rainbow609
