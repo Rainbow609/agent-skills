@@ -38,9 +38,12 @@ if ((${#failed[@]})); then
   exit 1
 fi
 
-if git status --porcelain -- upstream/ | grep -q .; then
+# 重建 APM 包的 symlink 视图（上游增删技能后 skills/ 链接需同步）
+./scripts/gen-apm-links.sh
+
+if git status --porcelain -- upstream/ skills/ | grep -q .; then
   echo "==> upstream changes:"
-  git status --porcelain -- upstream/
+  git status --porcelain -- upstream/ skills/
 else
   echo "==> upstream up to date"
 fi

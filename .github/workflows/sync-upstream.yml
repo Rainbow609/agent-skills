@@ -27,7 +27,7 @@ jobs:
       - name: 检测变更
         id: diff
         run: |
-          if git status --porcelain -- upstream/ | grep -q .; then
+          if git status --porcelain -- upstream/ skills/ | grep -q .; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -41,7 +41,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add upstream/
+          git add upstream/ skills/
           git commit -m "chore(upstream): 定时同步上游技能"
           git push -f origin "$branch"
           gh pr create --title "上游技能周更 $(date +%F)" --body "自动同步 mattpocock/skills、DietrichGebert/ponytail、linhay/harmony-next.skills、docker/skills、titanwings/distilly、KKKKhazix/khazix-skills、tt-a1i/archify。变更明细见 commits；审阅后合并即完成周更。" \
