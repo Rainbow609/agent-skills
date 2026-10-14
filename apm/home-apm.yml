@@ -1,0 +1,14 @@
+# 用户级 APM 清单模板：install.sh 落盘为 ~/.apm/apm.yml 后执行 apm install -g。
+# 🌟 引用必须带引号（# 在 YAML 里是注释起始）；#main 跟随仓库主线（主线由周更 PR 门控），
+#    需要钉死版本时改为 "#v2026.10.14" 之类 tag 或 "#<sha>"。lockfile 会记录解析出的精确 commit。
+name: rainbow609-home
+version: 1.0.0
+description: 用户级 APM 清单：agent-skills 包全量分发（88 技能 + 12 智能体，claude/codex/agent-skills 三目标）
+targets:
+- claude
+- codex
+- agent-skills
+dependencies:
+  apm:
+  - "Rainbow609/agent-skills#main"
+  mcp: []

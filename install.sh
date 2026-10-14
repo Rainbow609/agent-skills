@@ -17,11 +17,24 @@ command -v node >/dev/null || { echo "需要 node/npx（npx skills 依赖）"; e
 command -v jq >/dev/null || { echo "需要 jq（MCP 配置合并用）"; exit 1; }
 command -v rsync >/dev/null || { echo "需要 rsync"; exit 1; }
 
-# ① 全量技能：从本仓库（本地路径源）安装全部技能到全局库。单条失败不阻断本地落盘步骤。
-#    🌟 必须 --full-depth：CLI 默认只扫根目录与 skills/ 深度 3，upstream/、snapshot/ 下的 62 个
-#    vendored 技能只有全树扫描才装得上。
-log "从本仓库安装全部技能（npx skills -> ${CANONICAL}）"
-npx -y skills@latest add "$REPO_DIR" -g -a codex -y --full-depth || warn "技能安装失败，跳过"
+ts="$(date +%Y%m%d-%H%M%S)"
+
+# ① 全量技能 + 双库智能体：apm 优先（lockfile 锁定 commit/SHA 并跨格式转换智能体），无 apm 回退 npx skills。
+if command -v apm >/dev/null; then
+  log "apm 全量分发（用户级）：技能+智能体，清单取自仓库 apm/home-apm.yml"
+  mkdir -p "$HOME/.apm"
+  [ -f "$HOME/.apm/apm.yml" ] && cp "$HOME/.apm/apm.yml" "$HOME/.apm/apm.yml.bak-$ts"
+  cp "$REPO_DIR/apm/home-apm.yml" "$HOME/.apm/apm.yml"
+  if apm install -g; then
+    log "apm 安装完成（lock: ~/.apm/apm.lock.yaml）"
+  else
+    warn "apm 安装失败——目标目录存在非 apm 管理的同名文件时需先手动清理或改用 apm install -g --force（详见 README）；本次跳过"
+  fi
+else
+  warn "未装 apm（brew install apm 可启用锁定分发），回退 npx skills"
+  log "从本仓库安装全部技能（npx skills -> ${CANONICAL}）"
+  npx -y skills@latest add "$REPO_DIR" -g -a codex -y --full-depth || warn "技能安装失败，跳过"
+fi
 expected="$(find "$REPO_DIR" -name SKILL.md -not -path '*/.git/*' | wc -l | tr -d ' ')"
 installed="$(find -L "$CANONICAL" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 if [ "$installed" -lt "$expected" ]; then
@@ -47,7 +60,6 @@ mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 
 # ④ MCP 配置：均无密钥。ZCode 侧按 server 合并（保留 config.json 里的其他 server 与设置），
 #    config.json 不存在时（新机首次配置）以模板生成；Claude 侧为整文件覆盖。落盘前各自备份。
-ts="$(date +%Y%m%d-%H%M%S)"
 ZCODE_CONFIG="$HOME/.zcode/cli/config.json"
 if [ -f "$ZCODE_CONFIG" ]; then
   cp "$ZCODE_CONFIG" "$ZCODE_CONFIG.bak-$ts"
