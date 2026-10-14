@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cmux-mcp": {
+      "command": "/opt/homebrew/bin/cmux-mcp",
+      "type": "stdio"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+# ── 提交信息格式（本文件全行注释，git 提交时自动剥除）────────────────
+#
+# 格式：<type>(<scope>): <简体中文简要描述>
+#
+#   type    feat|fix|docs|refactor|chore|build|perf|test|style|ci|revert（一律小写）
+#   scope   小写英文模块名或目录名（如 stationb、scheduler）；无法归属单一 scope 时省略
+#   描述    祈使句简体中文，≤50 字，不用句点结尾，技术术语保留英文
+#
+# 正文（可选）：与描述间空一行，每行 ≤72 字符，说明动机、影响与权衡，
+#             不逐行复述 diff 可见的内容
+# footer（可选）：与正文间空一行，采用 git trailer 格式（token 后接 : 或 #），
+#             如 Closes #123、Reviewed-by: ...
+#
+# 破坏性变更：type/scope 后加 !（如 feat!:），并于 footer 写
+#           BREAKING CHANGE: <迁移说明>
+#
+# ── 示例 ──
+#
+# fix(api): 修复 503 服务不可用时的重试逻辑
+#
+# 外部 API 在高峰时段偶尔返回 503 错误。
+# 新增指数退避重试机制，最多尝试 3 次。
+#
+# Closes #123

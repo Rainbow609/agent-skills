@@ -1,0 +1,21 @@
+{
+  "servers": {
+    "memorix": {
+      "command": "/opt/homebrew/bin/memorix",
+      "args": [
+        "serve"
+      ],
+      "env": {
+        "MEMORIX_ORAMA_HYDRATION_THRESHOLD": "100"
+      }
+    },
+    "dbx": {
+      "command": "/opt/homebrew/bin/dbx-mcp-server",
+      "args": []
+    },
+    "context7": {
+      "command": "/opt/homebrew/bin/context7-mcp",
+      "args": []
+    }
+  }
+}
