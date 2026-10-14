@@ -10,9 +10,9 @@
 
 ```
 agent-skills/
-├── skills/                  # 自有技能 7 个（真实目录）+ 81 个 symlink 指向 upstream/snapshot（APM 包视图，由 scripts/gen-apm-links.sh 生成）
+├── skills/                  # 自有技能 8 个（真实目录，含 manbo-reader 项目技能）+ 81 个 symlink 指向 upstream/snapshot（APM 包视图，由 scripts/gen-apm-links.sh 生成）
 ├── apm.yml                  # APM 包清单（name/version），使本仓库可被 apm 作为单一依赖全量分发
-├── scripts/                 # gen-apm-links.sh：重建 skills/ symlink 视图与 .apm/agents（周更 CI 自动调用）
+├── scripts/                 # gen-apm-links.sh：重建 skills/ symlink 视图与 .apm/agents（周更 CI 自动调用）；sync-to-kimi-work.sh：把鸿蒙/项目技能同步到 Kimi Work 技能目录（macOS，幂等，应用更新后重跑恢复）
 ├── upstream/                # vendor 的 git 上游（周更 PR 自动整树同步，勿手改）
 │   ├── mattpocock/skills/   #   mattpocock/skills
 │   ├── DietrichGebert/ponytail/          #   ponytail 六件套
