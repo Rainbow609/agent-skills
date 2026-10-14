@@ -31,7 +31,7 @@ agent-skills/
 ## 用法
 
 ```bash
-# 新机初始化 / 日常重装（幂等；私有仓库按提示先 gh auth login）
+# 新机初始化 / 日常重装（幂等；公开仓库 clone 无需认证）
 git clone https://github.com/Rainbow609/agent-skills.git   # clone 到任意位置，脚本自定位仓库根
 cd agent-skills
 ./install.sh
@@ -65,5 +65,5 @@ npx skills add Rainbow609/agent-skills -g
 - **MCP 配置无密钥**：全部指向 homebrew 二进制。若将来加带 token 的 server，用 `${ENV_VAR}` 引用，**密钥绝不入库**。
 - ZCode 侧 MCP 用 jq 按 server **合并**（config.json 里其他 server 与设置不动），落盘前自动备份为 `.bak-<时间戳>`。
 - `universal-product-quality` 目录名与其 SKILL.md `name: universal-product-quality-gate` 不一致，历史原因保留目录名。
-- 本仓库为 **private**：技能内容多为 MIT 上游的再分发，仅供个人/受邀协作者使用，勿转公开时忽略上表许可信息。
+- **开源与许可**：自有内容（`skills/`、`agents/`、`mcp/`、`install.sh`、`AGENTS.md`、工作流）以仓库根 [LICENSE](./LICENSE)（MIT）发布；`upstream/`、`snapshot/` 为各上游的再分发，许可见上表与各目录内保留的 LICENSE/说明文件。
 - Claude Code 的 `~/.claude/skills` 不在 install.sh 管理范围：需要时用 `npx skills add <owner>/agent-skills -g -a claude-code`。
