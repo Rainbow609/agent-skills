@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 用户层技能 / 智能体 / MCP 装配脚本 —— 仓库为单一真源，幂等可重跑。
-# 🌟 上游技能不 vendor，统一经 npx skills（vercel-labs/skills）安装到全局库 ~/.agents/skills；
-#    自有技能、智能体定义、MCP 配置由本脚本落盘。
+# 用户层技能 / 智能体 / MCP / 全局 AGENTS.md 装配脚本 —— 仓库为单一真源，幂等可重跑。
+# 🌟 上游技能已全量 vendor 进 upstream/（GitHub Actions 周更开 PR 同步），本仓库即唯一技能源；
+#    下游一条命令 npx skills add 本仓库即可获得全部 69 个技能。
 set -euo pipefail
 shopt -s nullglob
 
@@ -15,45 +15,37 @@ warn() { printf '\033[1;33m ⚠\033[0m %s\n' "$*"; }
 
 command -v node >/dev/null || { echo "需要 node/npx（npx skills 依赖）"; exit 1; }
 command -v jq >/dev/null || { echo "需要 jq（MCP 配置合并用）"; exit 1; }
+command -v rsync >/dev/null || { echo "需要 rsync"; exit 1; }
 
-# ① 上游技能：npx skills 安装。-a codex 的全局目标即 ~/.agents/skills（与既有安装一致）。
-#    🌟 单个上游失败不阻断：③④⑤⑥ 是纯本地落盘，必须继续执行。
-log "安装 mattpocock/skills（工程/生产力技能，~40 个）"
-npx -y skills@latest add mattpocock/skills -g -a codex -y || warn "mattpocock/skills 安装失败，跳过"
-log "安装 DietrichGebert/ponytail（ponytail 六件套）"
-npx -y skills@latest add DietrichGebert/ponytail -g -a codex -y || warn "DietrichGebert/ponytail 安装失败，跳过"
-log "安装 linhay/harmony-next.skills（HarmonyOS 离线知识库，72M，较慢）"
-npx -y skills@latest add linhay/harmony-next.skills --skill harmony-next -g -a codex -y || warn "harmony-next 安装失败，跳过"
-
-# ② CLI 自管上游：无 npx skills 源，只能由各自 CLI 管理；缺 CLI 只提示不失败。
-if command -v openspec >/dev/null; then
-  log "openspec update 刷新 openspec-* 技能"
-  openspec update || warn "openspec update 失败，openspec-* 保持现状"
+# ① 全量技能：从本仓库（本地路径源）安装全部技能到全局库。单条失败不阻断本地落盘步骤。
+#    🌟 必须 --full-depth：CLI 默认只扫根目录与 skills/ 深度 3，upstream/、snapshot/ 下的 62 个
+#    vendored 技能只有全树扫描才装得上。
+log "从本仓库安装全部技能（npx skills -> ${CANONICAL}）"
+npx -y skills@latest add "$REPO_DIR" -g -a codex -y --full-depth || warn "技能安装失败，跳过"
+expected="$(find "$REPO_DIR" -name SKILL.md -not -path '*/.git/*' | wc -l | tr -d ' ')"
+installed="$(find -L "$CANONICAL" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+if [ "$installed" -lt "$expected" ]; then
+  warn "技能数量对账：仓库 ${expected} 个，全局库仅 ${installed} 个，部分技能未安装"
 else
-  warn "未装 openspec CLI，openspec-* 技能跳过（npm i -g openspec 后重跑）"
-fi
-if command -v devecocli >/dev/null; then
-  warn "hmos-* 9 个技能由 devecocli 管理且需手动 cp 到 ${CANONICAL}（无 npx skills 源），缺失时用 devecocli skills list/find 补装"
-else
-  warn "未装 devecocli，hmos-* 技能无法检查/补装"
+  log "技能数量对账通过：${installed}/${expected}"
 fi
 
-# ③ 自有技能 → 全局库：逐目录 rsync（--delete 只作用于该技能目录自身，不碰其他）。
+# ② 自有技能 → 全局库：逐目录 rsync（--delete 只作用于该技能目录自身，不碰其他）。
 for d in "$REPO_DIR"/skills/*/; do
   name="$(basename "$d")"
-  log "同步自有技能 $name → $CANONICAL/$name"
+  log "同步自有技能 ${name} -> ${CANONICAL}/${name}"
   rsync -a --delete "${d%/}/" "$CANONICAL/$name/"
 done
 
-# ④ 智能体定义 → 双落（两目录各自格式，覆盖同名文件、不动其他文件）。
+# ③ 智能体定义 → 双落（两目录各自格式，覆盖同名文件、不动其他文件）。
 zcode_agents=("$REPO_DIR"/agents/zcode/*.md)
 universal_agents=("$REPO_DIR"/agents/universal/*.agent.md)
-log "落智能体定义：ZCode 版 → ${AGENTS_ZCODE}，universal 版 → ${AGENTS_UNIVERSAL}"
+log "落智能体定义：ZCode 版 -> ${AGENTS_ZCODE}，universal 版 -> ${AGENTS_UNIVERSAL}"
 mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 ((${#zcode_agents[@]})) && cp "${zcode_agents[@]}" "$AGENTS_ZCODE/"
 ((${#universal_agents[@]})) && cp "${universal_agents[@]}" "$AGENTS_UNIVERSAL/"
 
-# ⑤ MCP 配置：均无密钥。ZCode 侧按 server 合并（保留 config.json 里的其他 server 与设置），
+# ④ MCP 配置：均无密钥。ZCode 侧按 server 合并（保留 config.json 里的其他 server 与设置），
 #    config.json 不存在时（新机首次配置）以模板生成；Claude 侧为整文件覆盖。落盘前各自备份。
 ts="$(date +%Y%m%d-%H%M%S)"
 ZCODE_CONFIG="$HOME/.zcode/cli/config.json"
@@ -66,7 +58,7 @@ if [ -f "$ZCODE_CONFIG" ]; then
     log "MCP 已合并进 ${ZCODE_CONFIG}（备份 .bak-${ts}）"
   else
     rm -f "$ZCODE_CONFIG.new"
-    echo "错误：jq 合并失败，$ZCODE_CONFIG 未改动（原文件备份在 .bak-${ts}）" >&2
+    echo "错误：jq 合并失败，${ZCODE_CONFIG} 未改动（原文件备份在 .bak-${ts}）" >&2
     exit 1
   fi
 else
@@ -83,24 +75,34 @@ else
   warn "未找到 ~/.claude，Claude MCP 跳过"
 fi
 
-# ⑥ 运行时布局：~/.zcode/skills → 全局库符号链接（幂等；真实目录先备份再替换）。
+# ⑤ 运行时布局：~/.zcode/skills → 全局库符号链接（幂等；真实目录先备份再替换）。
 if [ -L "$HOME/.zcode/skills" ]; then
   target="$(readlink "$HOME/.zcode/skills")"
   if [ "$target" = "$CANONICAL" ]; then
     log "~/.zcode/skills 已指向全局库，跳过"
   else
     ln -sfn "$CANONICAL" "$HOME/.zcode/skills"
-    log "~/.zcode/skills 重定向：$target → $CANONICAL"
+    log "~/.zcode/skills 重定向：${target} -> ${CANONICAL}"
   fi
 elif [ -d "$HOME/.zcode/skills" ]; then
   skills_bak="$HOME/.zcode/skills.bak-$ts"
   mv "$HOME/.zcode/skills" "$skills_bak"
   ln -s "$CANONICAL" "$HOME/.zcode/skills"
-  log "原目录已备份为 $(basename "$skills_bak")，符号链接 ~/.zcode/skills → $CANONICAL"
+  log "原目录已备份为 $(basename "$skills_bak")，符号链接 ~/.zcode/skills -> ${CANONICAL}"
 else
   mkdir -p "$HOME/.zcode"
   ln -s "$CANONICAL" "$HOME/.zcode/skills"
-  log "已建立符号链接 ~/.zcode/skills → $CANONICAL"
+  log "已建立符号链接 ~/.zcode/skills -> ${CANONICAL}"
 fi
 
-log "完成。更新上游用：npx skills update -g；改自有技能后重跑本脚本。"
+# ⑥ 全局 AGENTS.md：仓库为单一真源，落盘 ~/.zcode/AGENTS.md。
+ZCODE_AGENTS="$HOME/.zcode/AGENTS.md"
+mkdir -p "$HOME/.zcode"
+if [ -f "$ZCODE_AGENTS" ]; then
+  cp "$ZCODE_AGENTS" "$ZCODE_AGENTS.bak-$ts"
+  log "原 AGENTS.md 已备份 .bak-${ts}"
+fi
+cp "$REPO_DIR/AGENTS.md" "$ZCODE_AGENTS"
+log "AGENTS.md 已落盘 ~/.zcode/AGENTS.md"
+
+log "完成。上游技能由 GitHub Actions 周更开 PR；改自有技能/智能体/MCP/AGENTS.md 后重跑本脚本。"
