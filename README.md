@@ -32,10 +32,12 @@ agent-skills/
 
 ```bash
 # 新机初始化 / 日常重装（幂等；私有仓库按提示先 gh auth login）
-git clone <本仓库> ~/git/agent-skills && ~/git/agent-skills/install.sh
+git clone https://github.com/Rainbow609/agent-skills.git   # clone 到任意位置，脚本自定位仓库根
+cd agent-skills
+./install.sh
 
 # 下游也可以只装技能（智能体/MCP/AGENTS.md 仍走 install.sh）
-npx skills add <owner>/agent-skills -g
+npx skills add Rainbow609/agent-skills -g
 
 # 升级技能 = 合并周更 PR 后重跑 install.sh（或直接 git pull + install.sh）
 ```
@@ -55,7 +57,9 @@ npx skills add <owner>/agent-skills -g
 
 ## 注意事项
 
-- **技能落盘为独立拷贝**：`npx skills` 对本地源实测走 copy（非 symlink），改仓库后需重跑 `install.sh` 同步到全局库。仓库位置建议仍固定在 `~/git/agent-skills`（install.sh 与文档按此路径引用）。
+- **clone 位置不限，勿写死路径**：install.sh 以 `$(dirname "${BASH_SOURCE[0]}")` 自定位仓库根，sync-upstream.sh 以 `git rev-parse --show-toplevel` 定位——这是 dotfiles 仓库的通行做法（self-locating bootstrap，参见 [holman/dotfiles](https://github.com/holman/dotfiles)）。新增脚本或文档时一律不要写死 clone 路径。
+- **技能落盘为独立拷贝**：`npx skills` 对本地源实测走 copy（非 symlink），改仓库后需重跑 `install.sh` 同步到全局库。
+- **MCP 模板含本机 homebrew 路径**：`/opt/homebrew/bin/...` 在他机使用前请确认二进制存在，或改为自己环境下的命令路径。
 - **`upstream/` 勿手改**：周更 PR 会整树覆盖。要魔改上游技能请 fork 源仓库改 `upstreams.json` 指向，或拷进 `skills/` 改名自管。
 - **周更 PR 复用同一分支**（`upstream-sync/weekly`）：上周未合并时本周推送自动更新该 PR，不会堆积。
 - **MCP 配置无密钥**：全部指向 homebrew 二进制。若将来加带 token 的 server，用 `${ENV_VAR}` 引用，**密钥绝不入库**。

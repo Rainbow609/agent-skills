@@ -54,7 +54,7 @@
 
 **回接核验（强制）**：实现类委派返回后，主代理必须亲自走读关键 hunk、核验证据（构建/日志/任务复选框）后才算完成——"子代理报告完成"不是完成；"委派了测试"不等于"验证过"。
 
-- 自定义代理定义、用户层技能与 MCP 配置的**单一真源是 `~/git/agent-skills` 仓库**：智能体改 `agents/zcode/`（.md）与 `agents/universal/`（.agent.md）两格式，技能改 `skills/`，MCP 改 `mcp/`，改后跑 `~/git/agent-skills/install.sh` 落盘（幂等；`~/.zcode/skills` 是 `~/.agents/skills` 的符号链接，上游技能用 `npx skills` 安装/`npx skills update -g` 升级，勿直接改运行时目录）；依赖项目 MCP 的代理仅在配置了对应 MCP 的仓库可用。**代理清单与各代理的触发条件以会话注入的 agent 列表及其定义 description 为单一真源，本文件不枚举**（枚举必随增删改名腐化）
+- 自定义代理定义、用户层技能与 MCP 配置的**单一真源是 `agent-skills` 私有仓**（github.com/Rainbow609/agent-skills，clone 位置不限）：智能体改 `agents/zcode/`（.md）与 `agents/universal/`（.agent.md）两格式，技能改 `skills/`，MCP 改 `mcp/`，改后在该仓库目录内跑 `./install.sh` 落盘（幂等；`~/.zcode/skills` 是 `~/.agents/skills` 的符号链接，上游技能 vendor 进仓库由 Actions 周更，勿直接改运行时目录）；依赖项目 MCP 的代理仅在配置了对应 MCP 的仓库可用。**代理清单与各代理的触发条件以会话注入的 agent 列表及其定义 description 为单一真源，本文件不枚举**（枚举必随增删改名腐化）
 - **委派强制场景**（对应代理可用时必须委派，不亲自执行）：广度探索；跨域深度调研；代码/安全/架构/过度设计审查（提交或开 MR 前）；测试执行；鸿蒙设备/模拟器回归；调试排查；已落成书面产物的多文件落码 → `implementer`（不 commit/push，完成后回主代理走审查；无书面计划则留在主代理）
 - **技能与代理分流**：明确打出斜杠指令（如 `/ponytail-review`、`/diagnosing-bugs`）才走技能本体；自然语言请求一律派代理，不自行载入同名技能
 
