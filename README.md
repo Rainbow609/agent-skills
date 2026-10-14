@@ -26,6 +26,7 @@ agent-skills/
 ├── agents/universal/        # 跨 agent 智能体（.agent.md 精简格式，与 zcode 版语义保持一致）
 ├── mcp/zcode-mcp.json       # ZCode MCP servers（合并进 ~/.zcode/cli/config.json）
 ├── mcp/claude-mcp.json      # Claude Code MCP servers（整文件 → ~/.claude/mcp.json）
+├── hooks/                   # 钩子库存档：claude-settings 脱敏模板（合并部署）+ codex/orca 快照（仅存档）
 ├── AGENTS.md                # 全局个人规则（落盘 ~/.zcode/AGENTS.md）
 ├── .upstream/upstreams.json # 同步清单：源仓库 / 分支 / 子路径 / 落点 / LICENSE 落位
 ├── .github/scripts/sync-upstream.sh      # 同步逻辑（本地也可直接跑）
@@ -70,7 +71,8 @@ npx skills add Rainbow609/agent-skills -g
 - **MCP 模板含本机 homebrew 路径**：`/opt/homebrew/bin/...` 在他机使用前请确认二进制存在，或改为自己环境下的命令路径。
 - **`upstream/` 勿手改**：周更 PR 会整树覆盖。要魔改上游技能请 fork 源仓库改 `upstreams.json` 指向，或拷进 `skills/` 改名自管。
 - **周更 PR 复用同一分支**（`upstream-sync/weekly`）：上周未合并时本周推送自动更新该 PR，不会堆积。
-- **MCP 配置无密钥**：全部指向 homebrew 二进制。若将来加带 token 的 server，用 `${ENV_VAR}` 引用，**密钥绝不入库**。
+- **MCP 配置与 hooks 模板均无密钥**：MCP 全部指向 homebrew 二进制；hooks 的 claude-settings 模板已剔除 token（合并部署时本机凭据原样保留，新机需自行补）。若将来加带 token 的内容，用环境变量引用，**密钥绝不入库**。
+- **hooks 目录**：`claude-settings.json` 为脱敏模板（install.sh jq 合并，本机 secrets 保留）；`codex-hooks.json` 与 `orca/*.sh` 由对应工具（cmux/Orca）自管，**仅存档不反向同步**（详见 [hooks/README.md](./hooks/README.md)）。
 - ZCode 侧 MCP 用 jq 按 server **合并**（config.json 里其他 server 与设置不动），落盘前自动备份为 `.bak-<时间戳>`。
 - `universal-product-quality` 目录名与其 SKILL.md `name: universal-product-quality-gate` 不一致，历史原因保留目录名。
 - **开源与许可**：自有内容（`skills/`、`agents/`、`mcp/`、`install.sh`、`AGENTS.md`、工作流）以仓库根 [LICENSE](./LICENSE)（MIT）发布；`upstream/`、`snapshot/` 为各上游的再分发，许可见上表与各目录内保留的 LICENSE/说明文件。
