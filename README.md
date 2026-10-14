@@ -27,6 +27,7 @@ agent-skills/
 ├── mcp/zcode-mcp.json       # ZCode MCP servers（合并进 ~/.zcode/cli/config.json）
 ├── mcp/claude-mcp.json      # Claude Code MCP servers（整文件 → ~/.claude/mcp.json）
 ├── hooks/                   # 钩子库存档：claude-settings 脱敏模板（合并部署）+ codex/orca 快照（仅存档）
+├── commands/                # 斜杠命令存档：OpenSpec opsx 三工具格式（install.sh cp 部署）
 ├── AGENTS.md                # 全局个人规则（落盘 ~/.zcode/AGENTS.md）
 ├── .upstream/upstreams.json # 同步清单：源仓库 / 分支 / 子路径 / 落点 / LICENSE 落位
 ├── .github/scripts/sync-upstream.sh      # 同步逻辑（本地也可直接跑）
@@ -61,6 +62,7 @@ npx skills add Rainbow609/agent-skills -g
 | `upstream/tt-a1i/archify` | [tt-a1i/archify](https://github.com/tt-a1i/archify)（MIT，仅取 `archify/` 技能子目录） | 周更 PR |
 | `upstream/linhay/harmony-next.skills` | [linhay/harmony-next.skills](https://github.com/linhay/harmony-next.skills)（仓库页标 MIT，未附 LICENSE 文件） | 周更 PR |
 | `snapshot/openspec` | openspec CLI（npm）模板快照，2026-10-14 采集 | 手动（`openspec update` 后拷回） |
+| `commands/` | OpenSpec CLI 生成的 `opsx:*` 斜杠命令（zcode/claude/iflow 三工具格式快照） | 手动（`openspec update` 后拷回，见 commands/README.md） |
 | `snapshot/huawei-hmos` | 华为官方 DevEco 技能库（`devecocli skills add`）快照，2026-10-14 采集 | 手动（devecocli 更新后拷回） |
 | `skills/`、`agents/`、`mcp/`、`AGENTS.md` | 自有 | 直接改 |
 
