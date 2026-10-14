@@ -27,6 +27,13 @@
     "dest": "upstream/titanwings/distilly",
     "license": null
   },
+  "khazix-skills": {
+    "repo": "https://github.com/KKKKhazix/khazix-skills",
+    "branch": "main",
+    "subpath": ".",
+    "dest": "upstream/KKKKhazix/khazix-skills",
+    "license": null
+  },
   "harmony-next": {
     "repo": "https://github.com/linhay/harmony-next.skills",
     "branch": "master",
