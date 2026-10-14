@@ -20,6 +20,13 @@
     "dest": "upstream/docker/skills",
     "license": "upstream/docker/LICENSE"
   },
+  "distilly": {
+    "repo": "https://github.com/titanwings/distilly",
+    "branch": "dot-skill",
+    "subpath": ".",
+    "dest": "upstream/titanwings/distilly",
+    "license": null
+  },
   "harmony-next": {
     "repo": "https://github.com/linhay/harmony-next.skills",
     "branch": "master",

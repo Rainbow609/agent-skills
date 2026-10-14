@@ -25,7 +25,8 @@ while IFS=$'\t' read -r id repo branch subpath dest license; do
     continue
   fi
   mkdir -p "$dest"
-  rsync -a --delete "$tmp/$id/$subpath/" "$dest/"
+  # 🌟 --exclude .git：subpath 为 "."（整仓 vendor，如 titanwings/distilly）时防止把克隆的 .git 带进本仓库
+  rsync -a --delete --exclude .git "$tmp/$id/$subpath/" "$dest/"
   if [ "$license" != "-" ] && [ -f "$tmp/$id/LICENSE" ]; then
     mkdir -p "$(dirname "$license")"
     cp "$tmp/$id/LICENSE" "$license"

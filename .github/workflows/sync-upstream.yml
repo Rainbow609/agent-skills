@@ -44,5 +44,5 @@ jobs:
           git add upstream/
           git commit -m "chore(upstream): 定时同步上游技能"
           git push -f origin "$branch"
-          gh pr create --title "上游技能周更 $(date +%F)" --body "自动同步 mattpocock/skills、DietrichGebert/ponytail、linhay/harmony-next.skills、docker/skills。变更明细见 commits；审阅后合并即完成周更。" \
+          gh pr create --title "上游技能周更 $(date +%F)" --body "自动同步 mattpocock/skills、DietrichGebert/ponytail、linhay/harmony-next.skills、docker/skills、titanwings/distilly。变更明细见 commits；审阅后合并即完成周更。" \
             || echo "PR 已存在（同分支），内容已随本次推送更新"
