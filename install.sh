@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 用户层技能 / 智能体 / MCP / 全局 AGENTS.md 装配脚本 —— 仓库为单一真源，幂等可重跑。
 # 🌟 上游技能已全量 vendor 进 upstream/（GitHub Actions 周更开 PR 同步），本仓库即唯一技能源；
-#    下游一条命令 npx skills add 本仓库即可获得全部 80 个技能。
+#    下游一条命令 npx skills add 本仓库即可获得全部 81 个技能。
 set -euo pipefail
 shopt -s nullglob
 
