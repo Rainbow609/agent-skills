@@ -10,7 +10,9 @@
 
 ```
 agent-skills/
-├── skills/                  # 自有技能（7 个，单一真源）
+├── skills/                  # 自有技能 7 个（真实目录）+ 81 个 symlink 指向 upstream/snapshot（APM 包视图，由 scripts/gen-apm-links.sh 生成）
+├── apm.yml                  # APM 包清单（name/version），使本仓库可被 apm 作为单一依赖全量分发
+├── scripts/                 # gen-apm-links.sh：重建 skills/ symlink 视图与 .apm/agents（周更 CI 自动调用）
 ├── upstream/                # vendor 的 git 上游（周更 PR 自动整树同步，勿手改）
 │   ├── mattpocock/skills/   #   mattpocock/skills
 │   ├── DietrichGebert/ponytail/          #   ponytail 六件套
@@ -45,6 +47,9 @@ cd agent-skills
 # 下游也可以只装技能（智能体/MCP/AGENTS.md 仍走 install.sh）
 npx skills add Rainbow609/agent-skills -g
 
+# APM 全量分发（一条依赖装载 88 技能 + 12 智能体，lockfile 锁定 commit/SHA）
+apm install -g Rainbow609/agent-skills#v2026.10.14     # 用户级；或在项目 apm.yml 中引用
+
 # 升级技能 = 合并周更 PR 后重跑 install.sh（或直接 git pull + install.sh）
 ```
 
@@ -68,6 +73,7 @@ npx skills add Rainbow609/agent-skills -g
 
 ## 注意事项
 
+- **技能目录是 APM 包视图**：`skills/` 下 81 个 symlink（指向 upstream/snapshot）由 `scripts/gen-apm-links.sh` 生成，勿手改；增删技能后重跑该脚本。APM 发现规则（实测 v0.33.0）：只认根 `skills/` 一层直接子目录、symlink 仅限包内、`.apm/skills` 在根 skills/ 存在时被忽略。
 - **clone 位置不限，勿写死路径**：install.sh 以 `$(dirname "${BASH_SOURCE[0]}")` 自定位仓库根，sync-upstream.sh 以 `git rev-parse --show-toplevel` 定位——这是 dotfiles 仓库的通行做法（self-locating bootstrap，参见 [holman/dotfiles](https://github.com/holman/dotfiles)）。新增脚本或文档时一律不要写死 clone 路径。
 - **技能落盘为独立拷贝**：`npx skills` 对本地源实测走 copy（非 symlink），改仓库后需重跑 `install.sh` 同步到全局库。
 - **MCP 模板含本机 homebrew 路径**：`/opt/homebrew/bin/...` 在他机使用前请确认二进制存在，或改为自己环境下的命令路径。
