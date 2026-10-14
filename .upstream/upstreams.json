@@ -1,0 +1,23 @@
+{
+  "mattpocock-skills": {
+    "repo": "https://github.com/mattpocock/skills",
+    "branch": "main",
+    "subpath": "skills",
+    "dest": "upstream/mattpocock/skills",
+    "license": "upstream/mattpocock/LICENSE"
+  },
+  "ponytail": {
+    "repo": "https://github.com/DietrichGebert/ponytail",
+    "branch": "main",
+    "subpath": "skills",
+    "dest": "upstream/DietrichGebert/ponytail",
+    "license": "upstream/DietrichGebert/LICENSE"
+  },
+  "harmony-next": {
+    "repo": "https://github.com/linhay/harmony-next.skills",
+    "branch": "main",
+    "subpath": "harmony-next",
+    "dest": "upstream/linhay/harmony-next.skills",
+    "license": null
+  }
+}

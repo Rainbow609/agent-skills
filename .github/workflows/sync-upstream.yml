@@ -1,0 +1,48 @@
+# 周更上游技能：克隆 upstreams.json 列出的源仓库，同步子树进 upstream/，
+# 有变更则开一个 PR 供人工审阅合并（不直推 main）。
+name: sync-upstream
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # 每周一 03:00 UTC（北京时间周一 11:00）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 同步上游子树
+        run: .github/scripts/sync-upstream.sh
+
+      - name: 检测变更
+        id: diff
+        run: |
+          if git status --porcelain -- upstream/ | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 创建分支与 PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 🌟 固定分支 + force push：上周 PR 未合并时，本周推送直接更新同一 PR，不堆积重复 PR。
+          branch="upstream-sync/weekly"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add upstream/
+          git commit -m "chore(upstream): 定时同步上游技能"
+          git push -f origin "$branch"
+          gh pr create --title "上游技能周更 $(date +%F)" --body "自动同步 mattpocock/skills、DietrichGebert/ponytail、linhay/harmony-next.skills。变更明细见 commits；审阅后合并即完成周更。" \
+            || echo "PR 已存在（同分支），内容已随本次推送更新"
