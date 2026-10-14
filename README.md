@@ -53,7 +53,12 @@ apm install -g Rainbow609/agent-skills#v2026.10.14     # 用户级；或在项�
 # 升级技能 = 合并周更 PR 后重跑 install.sh（或直接 git pull + install.sh）
 ```
 
-前置：`node`/`npx`、`jq`、`rsync`、`git`。
+前置：`node`/`npx`、`jq`、`rsync`、`git`；`apm`（`brew install apm`，启用锁定分发与智能体跨格式转换；缺失时自动回退 npx 仅装技能）。
+
+**分发分工（2026-10-14 起）**：
+- `apm install -g`（清单 `apm/home-apm.yml` → `~/.apm/apm.yml`）：全部 88 技能 → `~/.agents/skills` + `~/.claude/skills`；12 智能体 → `~/.agents/agents` + `~/.claude/agents`（.md）+ `~/.codex/agents`（自动转 .toml）。lockfile 记录精确 commit 与每文件 sha256。
+- `install.sh` 其余步骤：ZCode 专属落点（`~/.zcode/agents` 富格式、symlink）、MCP 合并、hooks、commands、AGENTS.md。
+- 无 apm 的机器：自动回退 `npx skills add`（装技能，不装智能体）。
 
 ## 来源与许可
 
