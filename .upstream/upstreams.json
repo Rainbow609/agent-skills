@@ -15,7 +15,7 @@
   },
   "harmony-next": {
     "repo": "https://github.com/linhay/harmony-next.skills",
-    "branch": "main",
+    "branch": "master",
     "subpath": "harmony-next",
     "dest": "upstream/linhay/harmony-next.skills",
     "license": null
