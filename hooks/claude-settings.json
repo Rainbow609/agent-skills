@@ -1,0 +1,142 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "effortLevel": "high",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.kimi.com/coding/",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kimi-for-coding",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "kimi-for-coding",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kimi-for-coding",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "kimi-for-coding",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kimi-for-coding",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "kimi-for-coding",
+    "ANTHROPIC_MODEL": "kimi-for-coding",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "262144",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "262144",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "if [ -x \"$HOME/.orca/agent-hooks/claude-hook.sh\" ]; then /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
+  "includeCoAuthoredBy": false,
+  "model": "sonnet",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git stash*)",
+      "Bash(gh pr*)",
+      "Bash(gh issue*)",
+      "Bash(gh repo*)",
+      "Bash(rg *)",
+      "Bash(fd *)",
+      "Bash(sg *)",
+      "Bash(jq *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(node --version)",
+      "Bash(npm run *)",
+      "Bash(pnpm *)",
+      "Bash(yarn *)",
+      "mcp__time__current_time",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__codegraph__codegraph_explore",
+      "mcp__codegraph__codegraph_search",
+      "mcp__codegraph__codegraph_node",
+      "mcp__codegraph__codegraph_callers",
+      "mcp__codegraph__codegraph_callees",
+      "mcp__codegraph__codegraph_impact",
+      "mcp__codegraph__codegraph_files",
+      "mcp__codegraph__codegraph_status"
+    ]
+  },
+  "statusLine": {
+    "command": "ccstatusline",
+    "padding": 0,
+    "refreshInterval": 10,
+    "type": "command"
+  }
+}

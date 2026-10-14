@@ -75,7 +75,29 @@ else
   warn "未找到 ~/.claude，Claude MCP 跳过"
 fi
 
-# ⑤ 运行时布局：~/.zcode/skills → 全局库符号链接（幂等；真实目录先备份再替换）。
+# ⑤ Claude 个人配置（hooks 接线 / 模型 / 权限等）：仓库为脱敏模板（不含任何 token）。
+#    合并语义：本机 secrets 与本地独有键保留，模板键优先（jq 右侧覆盖）。
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+if [ -d "$HOME/.claude" ]; then
+  if [ -f "$CLAUDE_SETTINGS" ]; then
+    cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.bak-$ts"
+    if jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_DIR/hooks/claude-settings.json" > "$CLAUDE_SETTINGS.new" && [ -s "$CLAUDE_SETTINGS.new" ]; then
+      mv "$CLAUDE_SETTINGS.new" "$CLAUDE_SETTINGS"
+      log "Claude settings 已合并（保留本机 secrets；备份 .bak-${ts}）"
+    else
+      rm -f "$CLAUDE_SETTINGS.new"
+      echo "错误：Claude settings 合并失败，${CLAUDE_SETTINGS} 未改动" >&2
+      exit 1
+    fi
+  else
+    cp "$REPO_DIR/hooks/claude-settings.json" "$CLAUDE_SETTINGS"
+    warn "已生成 Claude settings（模板不含 token，请补 env.ANTHROPIC_AUTH_TOKEN 后再用）"
+  fi
+else
+  warn "未找到 ~/.claude，Claude settings 跳过"
+fi
+
+# ⑥ 运行时布局：~/.zcode/skills → 全局库符号链接（幂等；真实目录先备份再替换）。
 if [ -L "$HOME/.zcode/skills" ]; then
   target="$(readlink "$HOME/.zcode/skills")"
   if [ "$target" = "$CANONICAL" ]; then
@@ -95,7 +117,7 @@ else
   log "已建立符号链接 ~/.zcode/skills -> ${CANONICAL}"
 fi
 
-# ⑥ 全局 AGENTS.md：仓库为单一真源，落盘 ~/.zcode/AGENTS.md。
+# ⑦ 全局 AGENTS.md：仓库为单一真源，落盘 ~/.zcode/AGENTS.md。
 ZCODE_AGENTS="$HOME/.zcode/AGENTS.md"
 mkdir -p "$HOME/.zcode"
 if [ -f "$ZCODE_AGENTS" ]; then
