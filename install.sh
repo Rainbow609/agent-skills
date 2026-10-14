@@ -127,4 +127,23 @@ fi
 cp "$REPO_DIR/AGENTS.md" "$ZCODE_AGENTS"
 log "AGENTS.md 已落盘 ~/.zcode/AGENTS.md"
 
-log "完成。上游技能由 GitHub Actions 周更开 PR；改自有技能/智能体/MCP/AGENTS.md 后重跑本脚本。"
+# ⑧ 斜杠命令落盘：OpenSpec opsx 命令（三工具各自格式，cp 只覆盖同名不删他命令）。
+if [ -d "$HOME/.zcode" ]; then
+  mkdir -p "$HOME/.zcode/commands/opsx"
+  cp "$REPO_DIR"/commands/zcode/opsx/*.md "$HOME/.zcode/commands/opsx/"
+  log "opsx 命令已落盘 ~/.zcode/commands/opsx/"
+fi
+if [ -d "$HOME/.claude" ]; then
+  mkdir -p "$HOME/.claude/commands/opsx"
+  cp "$REPO_DIR"/commands/claude/opsx/*.md "$HOME/.claude/commands/opsx/"
+  log "opsx 命令已落盘 ~/.claude/commands/opsx/"
+fi
+if [ -d "$HOME/.iflow" ]; then
+  cp "$REPO_DIR"/commands/iflow/opsx-*.md "$HOME/.iflow/commands/" 2>/dev/null || {
+    mkdir -p "$HOME/.iflow/commands"
+    cp "$REPO_DIR"/commands/iflow/opsx-*.md "$HOME/.iflow/commands/"
+  }
+  log "opsx 命令已落盘 ~/.iflow/commands/"
+fi
+
+log "完成。上游技能由 GitHub Actions 周更开 PR；改自有技能/智能体/MCP/hooks/commands/AGENTS.md 后重跑本脚本。"
