@@ -30,6 +30,7 @@ agent-skills/
 ├── mcp/claude-mcp.json      # Claude Code MCP servers（整文件 → ~/.claude/mcp.json）
 ├── hooks/                   # 钩子库存档：claude-settings 脱敏模板（合并部署）+ codex/orca 快照（仅存档）
 ├── commands/                # 斜杠命令存档：OpenSpec opsx 三工具格式（install.sh cp 部署）
+├── docs/                    # 通用知识沉淀（检索到官方依据后成文；首篇 tag-based-release-workflow：tag 唯一版本源工作流）
 ├── AGENTS.md                # 全局个人规则（落盘 ~/.zcode/AGENTS.md）
 ├── .upstream/upstreams.json # 同步清单：源仓库 / 分支 / 子路径 / 落点 / LICENSE 落位
 ├── .github/scripts/sync-upstream.sh      # 同步逻辑（本地也可直接跑）
