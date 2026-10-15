@@ -16,6 +16,14 @@
     "context7": {
       "command": "/opt/homebrew/bin/context7-mcp",
       "args": []
+    },
+    "deveco-codegenie": {
+      "command": "/opt/homebrew/bin/codegenie-mcp-server",
+      "args": [],
+      "env": {
+        "DEVECO_PATH": "/Applications/DevEco-Studio.app/Contents",
+        "ADDITIONAL_TOOL_GROUPS": "emulator_manager,ui_integration_test"
+      }
     }
   }
 }
