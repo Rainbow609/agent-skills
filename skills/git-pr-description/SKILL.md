@@ -180,8 +180,8 @@ gh auth status
 git ls-remote --heads origin <source_branch>
 git rev-parse HEAD
 
-# 2) 是否已有 open PR（--state all 会列出已合并/已关闭，仅 opened 阻挡创建）
-gh pr list --head <source_branch> --state opened --json number,url
+# 2) 是否已有 open PR（--state all 会列出已合并/已关闭，仅 open 状态阻挡创建）
+gh pr list --head <source_branch> --state open --json number,url
 
 # 3) 创建 PR——--title 与 --body-file 带齐后 gh 不进交互提示，缺任意一个会停在等待输入
 #    --title 的角括号是占位符，必须换成实际标题，不可照抄
@@ -209,7 +209,8 @@ gh pr view <source_branch> --json number,url,title,baseRefName,headRefName
 ### 边界与禁止事项
 
 - **已有 open PR → 不重复创建**：回报既有 PR 网址；标题或描述需更新时用 `gh pr edit <编号> -y --title "<新标题>" --body-file .tmp/pr_description_<branch>.md`（`gh pr create` 不会更新已存在的 PR，这是已知行为，必须先查重）
-- **已 merged／已 closed 的旧 PR 不阻挡创建**：同一分支名可能来自上一个已并的 PR，只有 `opened` 状态才算"已存在"
+- **已 merged／已 closed 的旧 PR 不阻挡创建**：同一分支名可能来自上一个已并的 PR，只有 `open` 状态才算"已存在"
+  （`--state` 的合法取值是 `open|closed|merged|all`；写成早期文档里的 `opened` 会被 gh 直接拒绝：`invalid argument "opened"`）
 - 创建成功后**只回报**：不自动 `gh pr merge`、不自动关闭 PR、不自动改写提交历史
 - 来源分支未推送、或远程 tip 落后本地时，**不得默默推送**——推送属写入操作，需先走"交互式选择"取得用户同意
 - 创建失败（403 权限不足、host 不可达、参数错误）→ 显示原始错误，**退回模式 B** 输出完整描述，不盲目重试超过一次
