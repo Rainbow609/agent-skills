@@ -82,6 +82,10 @@ cp agents/universal/*.agent.md ~/.agents/agents/
 
 ## 注意事项
 
+- **代理注册表在「对话开始」时快照**：运行中修改/新增 `~/.agents/agents/*.agent.md`（包括
+  `install.sh` 落盘）对**已开启的对话不生效**，派生子代理仍用旧配置（新代理则报
+  `Subagent profile "xxx" was not found`）。修复后必须**开新对话**验证，探针方法：新对话里
+  派发任意带白名单的代理，让其 Read 一个文件 + Bash `echo probe` 并回报实际工具清单。
 - 无法识别的条目（如外部 MCP 的 `dbx/dbx_*`）脚本会原样保留并告警——它们同样会被
   Kimi Code 过滤掉，需对照所连 MCP 的实际工具名（`mcp__<server>__<tool>`）人工确认。
 - `mcp-servers:` 等 Copilot 专属 YAML 字段 Kimi Code 会忽略，对运行时无影响，可留可删。
