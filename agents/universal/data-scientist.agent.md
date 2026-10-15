@@ -2,16 +2,16 @@
 name: data-scientist
 description: "Use when the user asks for data analysis/数据分析/SQL 分析/data quality/报表调查/ETL review or needs to explore data patterns: writes and runs SQL queries and analysis scripts via dbx MCP, returns insights — not raw dumps. Read-only SELECT only; temp files in .tmp/ only. Requires dbx MCP connected (see .vscode/mcp.json)."
 tools:
-  - codebase
-  - searchResults
-  - usages
-  - runCommands
-  - dbx/dbx_list_connections
-  - dbx/dbx_list_databases
-  - dbx/dbx_list_tables
-  - dbx/dbx_describe_table
-  - dbx/dbx_get_schema_context
-  - dbx/dbx_execute_query
+  - Grep
+  - Glob
+  - Read
+  - Bash
+  - mcp__dbx__dbx_list_connections
+  - mcp__dbx__dbx_list_databases
+  - mcp__dbx__dbx_list_tables
+  - mcp__dbx__dbx_describe_table
+  - mcp__dbx__dbx_get_schema_context
+  - mcp__dbx__dbx_execute_query
 mcp-servers:
   dbx:
     type: local
@@ -31,7 +31,7 @@ mcp-servers:
 
 1. **理解问题**：先厘清分析目标，不要盲目跑查询
 2. **探索结构**：不清楚表结构时先用 `dbx_get_schema_context`／`dbx_describe_table`
-3. **逐步分析**：复杂分析拆成多个小查询；需要 pandas 时用 runCommands 写临时脚本到 `.tmp/`，跑完即删
+3. **逐步分析**：复杂分析拆成多个小查询；需要 pandas 时用 Bash 写临时脚本到 `.tmp/`，跑完即删
 4. **回传洞察**：只回结论、关键计数、趋势；大结果集只取 top/bottom N
 
 ## 铁律

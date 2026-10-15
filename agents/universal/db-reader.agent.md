@@ -2,13 +2,15 @@
 name: db-reader
 description: "Use when the user asks to query the database/查数据/查表/验证数据是否存在/explore schema/调查数据, or needs data evidence for a question: read-only SELECT via the dbx MCP against the MSSQL report DB. Never writes; returns a conclusion plus key rows only. Requires the dbx MCP server connected (see .vscode/mcp.json)."
 tools:
-  - codebase
-  - dbx/dbx_list_connections
-  - dbx/dbx_list_databases
-  - dbx/dbx_list_tables
-  - dbx/dbx_describe_table
-  - dbx/dbx_get_schema_context
-  - dbx/dbx_execute_query
+  - Grep
+  - Glob
+  - Read
+  - mcp__dbx__dbx_list_connections
+  - mcp__dbx__dbx_list_databases
+  - mcp__dbx__dbx_list_tables
+  - mcp__dbx__dbx_describe_table
+  - mcp__dbx__dbx_get_schema_context
+  - mcp__dbx__dbx_execute_query
 mcp-servers:
   dbx:
     type: local

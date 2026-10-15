@@ -2,13 +2,15 @@
 name: database-optimizer
 description: "Use when the user asks for query/SQL performance analysis, slow query investigation, execution plan reading, index strategy review, or schema/DDL migration risk assessment, or says 查询慢/优化 SQL/执行计划/索引策略/schema 审查/迁移风险: read-only diagnosis of MSSQL queries and schema; returns P0-P3 findings with suggested DDL (never executes). Boundary: fetching data evidence belongs to db-reader; business data patterns belong to data-scientist; this agent owns DB internals."
 tools:
-  - codebase
-  - dbx/dbx_list_connections
-  - dbx/dbx_list_databases
-  - dbx/dbx_list_tables
-  - dbx/dbx_describe_table
-  - dbx/dbx_get_schema_context
-  - dbx/dbx_execute_query
+  - Grep
+  - Glob
+  - Read
+  - mcp__dbx__dbx_list_connections
+  - mcp__dbx__dbx_list_databases
+  - mcp__dbx__dbx_list_tables
+  - mcp__dbx__dbx_describe_table
+  - mcp__dbx__dbx_get_schema_context
+  - mcp__dbx__dbx_execute_query
 mcp-servers:
   dbx:
     type: local
@@ -34,7 +36,7 @@ mcp-servers:
 
 ## 工作流程
 
-1. 先读代码：请求指到的 ORM／SQL 所在文件用 codebase 搜索与 read 读出真实语句，不要凭描述审查
+1. 先读代码：请求指到的 ORM／SQL 所在文件用 Grep/Glob 搜索与 Read 读出真实语句，不要凭描述审查
 2. schema 用 `dbx_get_schema_context`／`dbx_describe_table` 核实，不要凭空猜字段名；索引现状查 `sys.indexes`＋`sys.dm_db_index_usage_stats`（user_seeks/scans/lookups、last_user_*）
 3. 执行计划诊断顺序：扫描 vs 查找、隐式转换、键查找放大、排序/哈希溢出、参数嗅探迹象、过期统计
 4. 审 schema 时对照仓库惯例（AGENTS.md 与请求为准，如审计字段顺序、逻辑外键、状态字段 TINYINT 枚举注释）

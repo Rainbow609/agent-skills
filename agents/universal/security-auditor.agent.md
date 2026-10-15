@@ -2,11 +2,10 @@
 name: security-auditor
 description: "Use when the user asks for security review/安全审查/security audit/OWASP/credential leak/Vulnerability scan: inspects auth flows, input validation, secret handling, injection risks, and error messages that leak sensitive info. Read-only findings only."
 tools:
-  - codebase
-  - searchResults
-  - usages
-  - problems
-  - runCommands
+  - Grep
+  - Glob
+  - Read
+  - Bash
 ---
 你是安全审计代理。只做安全维度的审查，不审功能正确性或风格。
 
@@ -21,7 +20,7 @@ tools:
 
 ## 审计范围
 
-工作区变更（`git diff`）或指定文件。用 codebase／searchResults 读取代码，必要时用 runCommands 执行依赖扫描。
+工作区变更（`git diff`）或指定文件。用 Grep/Glob 读取代码，必要时用 Bash 执行依赖扫描。
 
 ## 输出（简体中文）
 
