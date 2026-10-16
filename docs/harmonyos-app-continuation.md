@@ -9,9 +9,9 @@
 
 | 步 | 做什么 | 关键点 |
 | --- | --- | --- |
-| 1 | `module.json5` 的能力项配 `"continuable": true` | **缺省 false**；配 false 时系统按「不可接续」处理且不报错——对端不出现接续图标时先查这里 |
-| 2 | 源端实现 `onContinue(wantParam)` | 返回 `AGREE(0)` / `REJECT(1)` / `MISMATCH(2)`；待迁移数据写进 `wantParam`（容量见 §2） |
-| 3 | 对端实现 `onWindowStageRestore(windowStage)` | 与源端 `onContinue` **成对**；在 `onCreate`/`onNewWant` 判 `LaunchReason.CONTINUATION(=3)` 解析数据 |
+| 1 | `module.json5` 的能力项配 `"continuable": true` | **缺省 false**；配 false 时系统按「不可接续」处理且不报错——对端不出现接续图标时先查这里；且仅当应用**获焦且可接续**才发接续广播（官方 FAQ 原文） |
+| 2 | 源端实现 `onContinue(wantParam)` | 返回 `AGREE(0)` / `REJECT(1)` / `MISMATCH(2)`；待迁移数据写进 `wantParam`（容量见 §2）。官方口径：**回调内发生异常可直接返回 REJECT**；版本协商不匹配返回 MISMATCH（读系统预置 `wantParam.version`，见 §2） |
+| 3 | 对端实现 `onWindowStageRestore(windowStage)` | 与源端 `onContinue` **成对**；在 `onCreate`/`onNewWant` 判 `LaunchReason.CONTINUATION(=3)` 解析数据（`onCreate`＝冷启动或多实例热启动，`onNewWant`＝单实例热启动） |
 | 4 | 对端恢复成功后重新 `setMissionContinueState(ACTIVE)` | 否则只能迁过来、迁不回去（社区多源印证 + 官方模板同款） |
 | 5 | 按需 `setMissionContinueState(INACTIVE)` | 页面级动态开关接续图标（如不可迁移的本地内容页） |
 
@@ -20,6 +20,7 @@
 - **Want 数据上限**：API 23 起 **200KB**；API 22 及之前 **100KB**（官方 API 页原文：受 IPC 通信限制）。它与「接续数据 <100KB 走 wantParam」的**选型阈值**是两个不同口径，勿混。
 - **分布式数据对象（DDO）**：跨端迁移单对象 **≤150KB**（多端协同 ≤500KB）；另有 16 实例 / 3 设备 / 50ms 约束。
 - 官方的数据迁移分档：<100KB 且无文件 → `want.param`；需要文件 → 先拷到 `distributedFilesDir` 转 `Asset`，经 DDO 承载（多文件用 `Assets` 数组）。
+- 🌟 **系统预置 wantParam 字段**（官方概述原文）：`version`＝**对端应用版本号**——接续前做兼容协商的标准姿势：低于阈值 → `showToast` 提示用户 + 返回 MISMATCH 终止协商；`targetDevice`＝对端设备 networkId。自定义 key **勿与预置字段撞名**，否则被系统覆盖导致对端取数异常。
 
 ## 3. 🌟 生命周期与恢复（最容易翻车的一节）
 
@@ -27,6 +28,8 @@
 - `restoreWindowStage()`（在 `onWindowStageRestore` 或 `onNewWant` 的 CONTINUATION 分支调用）**必须在同步方法中**（API 页约束）。
 - 触发顺序：`onCreate()` / `onNewWant()` → `onWindowStageRestore()`；页面栈自动恢复**仅支持 router**（`navigation` 应用不迁移页面栈，需自行经 want 传页面信息手动加载）。
 - 源端接续后是否退出，由 want 里的 `SUPPORT_CONTINUE_SOURCE_EXIT_KEY` 控制；长内容/阅读类官方建议源端退出（涉听书可仅暂停）。
+- 🌟 **快速启动目标应用**：`continueType` 值加 `_ContinueQuickStart` 后缀（如 `EntryAbility_ContinueQuickStart`）＝用户发起接续后对端**立即拉起**（默认要等数据传完才拉起）。代价是对端收到**两次启动**：先 `PREPARE_CONTINUATION`（冷启动走 onCreate、热启动走 onNewWant），数据就绪后再来一次 `CONTINUATION`（onNewWant）——业务分支只认 CONTINUATION，勿在 PREPARE 阶段做恢复。
+- 按需页面栈：`wantParam[SUPPORT_CONTINUE_PAGE_STACK_KEY]`（原样 key `ohos.extra.param.key.supportContinuePageStack`）设 false 可关掉系统页面栈恢复（**默认恢复**），改在 `onWindowStageRestore` 里 `loadContent` 指定落地页——navigation 应用即走此路（见上行 router 限制）。
 
 ## 4. 🌟 进度接续三场景配方（全文精读 `bpta-application-continue-progess`，2026-10-16）
 
@@ -65,9 +68,10 @@
 - `onContinue` 抛异常 = **静默中断**：系统无提示、日志留痕 → 必须 try-catch + hilog 打点分段定位。
 - 接续数据**一次性搬运**：对端恢复后要主动落定状态，失败即丢。
 - 对端接续图标 **1 分钟无操作 / 锁屏 10 秒自动消失**——测试用例要把点击压进时限内。
-- **模拟器不支持接续**：须双真机 + 同华为账号 + 组网 + 系统设置「多设备协同 > 接续」开启；先跑 §5 第一条命令验组网。
+- **模拟器不支持接续**：须双真机 + 同华为账号 + 组网 + 系统设置「多设备协同 > 接续」开启；先跑 §6 第一条命令验组网。
 - 权限：**API 12 起免 `DISTRIBUTED_DATASYNC`**（大量旧文仍写「必须申请」，以官方某版本的变更为准）；API 11 及以前需声明 + 动态申请。
-- 跨 APPID（手机 / PC 拆分不同包）接续需 `continueBundleName` + 在 AGC 申请「接续服务」；同一开发者不同 BundleName 仅需 `continueBundleName`。
+- 🌟 **跨端迁移配置三档**（以概述 `bpta-continue-cast` 为准）：① 同应用异 Ability（同 Bundle，双端 Ability 名不同）＝`continueType` 双端一致；② 同开发者不同 BundleName＝`continueBundleName` + `continueType` **两字段都要**、双端一致（旧口径「仅需 continueBundleName」不完整，已修订）；③ 不同开发者（跨 APPID）＝再加 AGC「接续服务」申请，且 **AppID 配置顺序＝对端匹配顺序**（发起端把对端设备形态的 AppID 排最前，如移动端发起：TV＞PC＞移动）、**务必包含自己的 AppID**，审批通过后还需重新下载 Profile 打包。
+- `continueType` 规则：本应用内唯一；字母/数字/下划线、≤127 字节、不支持中文；字符串数组**仅第一个生效**（配多个是白配）。
 - 官方「新闻阅读」垂类（电子书/听书）建议：发起页 = 书籍首页/阅读页，同步阅读与听书进度。
 
 ## 6. 调试配方
@@ -89,6 +93,7 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 - `onContinue` 的 Promise 异步版本起点：接口参考页写 API 18、最佳实践页写 API 12——**官方自相矛盾**（2026-10-16 查）。
 - 权限口径冲突：`free-flow-faqs-1` FAQ 仍按 API 11 及以前口径写「需申请 `DISTRIBUTED_DATASYNC`」。
 - 源端返回 `REJECT` 后的系统后续行为，官方未说明。
+- 跨 APPID 配置口径差：概述（`bpta-continue-cast`）要求 continueBundleName + continueType + AGC 接续服务申请；FAQ `free-flow-faqs-2` 同场景示例只突出 continueBundleName、**全程未提 AGC 申请步骤**——配置以概述为准，接续不生效时先补齐两字段再查申请状态。
 
 ## 8. 官方资料索引（`devecocli docs read "<路径 ID>"` 可直接复核）
 
@@ -101,5 +106,5 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 | UIAbility（onWindowStageRestore / onContinue 成对） | `API参考/Ability_Kit_程序框架服务/ArkTS_API/Stage模型能力的接口/ohos_app_ability_UIAbility_带界面的应用组件_/js-apis-app-ability-uiability` |
 | 不同 APPID 接续 FAQ | `FAQ/自由流转/不同APPID的应用如何实现应用接续/free-flow-faqs-2` |
 
-> 一手复核时间：2026-10-16（Want 200KB 分界、`onWindowStageRestore` 语义、aa `-c` 语义均对官方原文核对；同日补 §4——restoreId 支持矩阵与 onDidBuild「仅首次 build 后回调一次」语义对官方原文核对）。
+> 一手复核时间：2026-10-16（Want 200KB 分界、`onWindowStageRestore` 语义、aa `-c` 语义均对官方原文核对；同日补 §4——restoreId 支持矩阵与 onDidBuild「仅首次 build 后回调一次」语义对官方原文核对；同日全文精读概述 `bpta-continue-cast` 697 行，§1/§2/§3/§5 增量与修订——系统预置字段、`_ContinueQuickStart` 双次拉起、配置三档——均对概述与 FAQ 原文核对）。
 > 落地案例：manbo-reader（HarmonyOS 漫画/电子书阅读器）——接续改造前置调研、项目侧障碍与策略取舍见其 `docs/continuation-index.md`。
