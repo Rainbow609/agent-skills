@@ -69,6 +69,8 @@ pip install hypium -U --trusted-host mirrors.huaweicloud.com \
 - 🌟 **ROM ≥6.1 且 hypium ≥6.1 时，UiViewer 也必须 ≥6.1**，否则用例执行中 UiViewer 断连。
 - 🌟 **Mac 的 UiViewer 需在设置面板手动指定 hdc 路径**（官方注意事项原文），不指则连不上设备。
 - 三件套（ROM / hypium / UiViewer-插件）尽量取同一版本线：26.x 配 26.x。
+- 2026-10-16 实测边界：**脚本驱动不受此限**——7.0 ROM（模拟器+真机）+ hypium 6.1.0.210 跨线可用，
+  uitest agent 首连自动部署协商（实测记录见 `harmonyos-deveco-testing-platform.md`）；该铁律主要约束 UiViewer 投屏。
 
 ## 安装包解剖（26.0.0.500 实测）
 
