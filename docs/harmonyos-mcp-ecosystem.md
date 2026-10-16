@@ -84,6 +84,36 @@ CodeGenie 产线发布的 MCP server（**注意：无公开仓库、无 License 
 **`start_app` 的关键行为**：设备列表包含已安装但未运行的模拟器，选中会自动启动——不接管
 模拟器生命周期也能跑起应用。
 
+### 1.3 Hypium 设备测试 MCP —— 白皮书已挂清单，截至 2026-10-16 未公开分发
+
+- 出处：鸿蒙生态测试白皮书「功能场景测试 → Hypium设备测试MCP工具」章节
+  （`guidebook/hoetwp-capability-functiontest3-0000002594762528`，章节更新 2026-06-12），
+  定位 = 标准 MCP 协议封装 Hypium 设备测试能力，供 AI Agent 驱动真机/模拟器执行测试。
+- 工具面（白皮书列 27 个，按模块）：basic（start_app/stop_app/double_click）、screen（unlock_screen/
+  screen_on/rotate_screen）、app_manager（install_app/uninstall_app/get_current_app）、toast
+  （start_listen_toast/get_toast）、general_gesture（pinch_in/pinch_out/rotate_gesture）、system_gesture
+  （open_notification_center/enter_recent_task/drag_to_xiaoyi）、observation（screenshot 仅 jpg/layout/
+  find_elements）、plugins（start_data_collect/stop_data_collect/generate_report）、clipboard
+  （write/read/clear_clipboard）、settings（set_view_mode）、shell（execute_shell_command/pull_file/push_file）。
+  🌟 双击/捏合/旋转/Toast/剪贴板/深浅色恰是 deveco-codegenie MCP 与 `devecocli ui` 都缺的能力——
+  两套 MCP 互补：codegenie = 模拟器生命周期 + verify_ui 自然语言验证；Hypium = 精细手势与设备状态操作。
+- 🌟 **获取现状（2026-10-16 实测）：未公开分发**。证据链：DevEco Testing Hypium 26.0.0.500 Release
+  公共包（2026-08-29 发布，晚于白皮书章节更新）解剖三组件均无 MCP server——Python 框架 wheels 无
+  server 模块、HypiumAssist PyCharm 插件 jar 无 mcp 类且不含工具名字符串、hypium-driver tgz 无 MCP 依赖；
+  npm 候选包名（hypium-mcp/@deveco/hypium-mcp 等）全 404；`devecocli serve mcp` 是代码理解服务
+  （check/LSP 共 10 工具）；DevEco Testing 26.0.0 版本说明无 MCP 字样。判断：白皮书先于公开发布，
+  预计随 DevEco Testing 云端渠道或后续版本放出——接入前先复核本节证据。
+- 已可得的底座：**hypium-driver**（npmjs 公共版 6.1.210；26.0.0.500 安装包内附新版离线 tgz，
+  `npm i -g ./hypium-driver-26.0.0500.tgz`）。要求 Node ≥20；`UiDriver.connect({ deviceSn })` 连设备
+  （不传 SN 默认取 `hdc list targets` 首个）；API 模块 app_manager/screen/system/storage/uinput/hilog/
+  netcopilot + uitest（uidriver/by/uicomponent/uitree/uiwindow）+ turbo AI 代理（qwen_vl/ui_tars/
+  gui_agent）+ scrcpy gRPC 投屏；完整接口见包内 `api_reference.md`（112KB）。自建薄 MCP server 的
+  映射基底即此库，是否立项属中等工程需单独定案。
+- 🌟 下载中心直链配方（通用）：华为下载中心页面 DOM 无 href，版本卡点击触发
+  `svc-drcn.developer.huawei.com/svc/community/common/v1/delegate` XHR（svc=
+  `PartnerCommunityService/v1/developer/downloadCenter/getToolVersionDownloadUrl`，reqJson 带
+  sdkId/versionId/packageId），响应含 dbankcdn 带签名直链（7200 秒时效）——浏览器钩 XHR 即可拿到。
+
 ## 二、社区方案（模拟器 / 设备自动化）
 
 | 方案 | 定位 | 关键事实（2026-10-16 实测） |
