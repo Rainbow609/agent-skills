@@ -19,7 +19,7 @@
 | `openspec-official-guide.md` | OpenSpec/OPSX 官方文档精读：心智模型、core/expanded 双 profile、spec-driven 权威契约（delta 四操作/场景格式硬约束/复选框解析）、元数据与配置体系、生命周期语义、CLI 机器契约、坑清单与 manbo 对照 | 官方仓库 docs/ + docs-lab/ 一手精读（2026-10-16） | 2026-10-16 |
 | `matt-pocock-skills-guide.md` | Matt Pocock Skills 官方精读：四大失败模式哲学、user/model 两层调用轴、idea→ship 主链与三 on-ramp、GLOSSARY/ADR 共享语言、主链技能硬规则（seam/tracer bullet/双轴评审/door call）、writing-for-agents 写作方法论、官方已知 bug 清单 | 官方仓库 README/SCOPE/AGENTS/GLOSSARY + 3 核心 SKILL.md 精读，其余 30+ 技能 docs 子代理通读（2026-10-16） | 2026-10-16 |
 | `openspec-matt-skills-combination.md` | OpenSpec × Matt Skills 结合实践：官方互不集成、社群代表方案（#285 dexhunter：OpenSpec 权威计划层＋grill 前置澄清＋不养双真源）、正交性分析、三种结合模式、五项冲突面裁决、manbo 落地示例 | Discussion #285 一手 + 两篇精读文档分析（2026-10-16） | 2026-10-16 |
-| `harmonyos-image-moire.md` | 图像抗摩尔纹（anti-moiré / descreen）：三类摩尔纹的区分与判据、「缩放比例决定条纹」核心机制、空间域/频域/选择性掩膜/AI 四类方案盘点（含「AI 无端侧生态」判定）、HarmonyOS 三通道可行性与工程配方 | manbo-reader 调研 + GitHub 实访 + 本机 SDK 实查 | 2026-10-16 |
+| `harmonyos-image-moire.md` | 图像抗摩尔纹（anti-moiré / descreen）：三类摩尔纹的区分与判据、「缩放比例决定条纹」核心机制、空间域/频域/选择性掩膜/AI 四类方案盘点（含「AI 无端侧生态」判定）、HarmonyOS 三通道可行性与工程配方 | manbo-reader 调研 + GitHub 实访 + 本机 SDK 实查（2026-10-16 二次核验修订） | 2026-10-16 |
 
 另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
 

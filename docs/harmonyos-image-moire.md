@@ -1,7 +1,7 @@
 # 图像抗摩尔纹（anti-moiré / descreen）：原理、方案与端侧落地
 
 > 适用前提：HarmonyOS（及一般移动端）应用展示**高分辨率扫描件/网点图**（漫画、报纸、传真、翻拍屏幕照）时出现横竖条纹，需做去/抗摩尔纹。
-> 核实时间：2026-10-16。方法：GitHub 实访 + 源码核对 + 本机 HarmonyOS SDK 头文件实查。
+> 核实时间：2026-10-16（同日经二次核验修订，记录见 §9）。方法：GitHub 实访 + 源码核对 + 本机 HarmonyOS SDK 头文件实查。
 > 项目特化的现状分析、file:line 与借鉴建议留在 manbo-reader `docs/antimoire-survey.md`，本文只留通用机制与方案判断。
 
 ## 1. 先分清三类摩尔纹（最常见的选型错误）
@@ -45,19 +45,20 @@
 
 | 项目 | 做法 | license / 端侧 |
 | --- | --- | --- |
-| [natethegreate/Screentone-Remover](https://github.com/natethegreate/Screentone-Remover) | 面向 doujin/manga 网点：GaussianBlur(5/7) → bilateral → 3×3 Laplacian 回边（`sh_point=5.56, sh_low=-1.14`） | 无声明 / 高 |
+| [natethegreate/Screentone-Remover](https://github.com/natethegreate/Screentone-Remover) | 面向 doujin/manga 网点：GaussianBlur 5×5（档 1/2）/ 7×7（档 3）→ bilateral(σ_color=30/50/80, σ_space=80) → 3×3 Laplacian 回边（`sh_point=5.56, sh_low=-1.14`） | 无声明 / 高 |
 | [GrantMoyer/doubletone](https://github.com/GrantMoyer/doubletone) | 扫描半调图去网 | CC0 / 中 |
 | [gmelodie/silentMoire](https://github.com/gmelodie/silentMoire) | 合成横/竖/斜摩尔纹 + FFT 域去噪 | MIT / 中 |
 
-**最有价值的工艺细节：用双边滤波替代纯高斯**。纯高斯会把网点背景色阶和线条一起糊掉，双边滤波保边，对线条密集的内容是决定性差异。
+**最有价值的工艺细节：用双边滤波替代纯高斯**。纯高斯会把网点背景色阶和线条一起糊掉，双边滤波保边，对线条密集的内容是决定性差异。另两条边缘路线（未验证，二次核验补录）：[Patrickctyyx/Screentone-Removal](https://github.com/Patrickctyyx/Screentone-Removal)（无 license）——线稿/网点**分离**路线；[Johnknee109/Manga-Screentone-Remover](https://github.com/Johnknee109/Manga-Screentone-Remover)（无 license）——「模糊去网点 → Real-ESRGAN 修复 → 线稿重融合」流水线。
 
 ### 4.2 频域（需自带 FFT）
 
 | 项目 | 做法 | 备注 |
 | --- | --- | --- |
 | [6o6o/fft-descreen](https://github.com/6o6o/fft-descreen) | 归一化幅度谱阈值建 mask → 膨胀 + 高斯羽化 → 乘性衰减 | MIT，最贴合扫描件网纹 |
-| [ciromattia/kcc](https://github.com/ciromattia/kcc) `--eraserainbow` | `rfft2` → 环形半径 + 135°/45° 方向掩膜 → 衰减 0.1 → `irfft2`，RGB↔YUV 切换 | 目标是彩 e-ink 彩虹纹，非网点 |
-| [Its-my-right/pocketbook_cfa_interference_breaker](https://github.com/Its-my-right/pocketbook_cfa_interference_breaker) | 纯 C + FFTW 的 **in-place 帧缓冲**滤波，双半径带通（`radius_min` / `radius_max_diviser`） | **移植首选**：纯 C、arm64 可编译，带明确旋钮 |
+| [ciromattia/kcc](https://github.com/ciromattia/kcc) `--eraserainbow` | `rfft2` → 高频（≥0.30 cycles/pixel）+ 135°/45° 对角线族（±10°）掩膜 → 幅度 ×0.1 → `irfft2`，RGB↔YUV 切换 | 目标是彩 e-ink 彩虹纹，非网点；ISC 许可 |
+| [Its-my-right/pocketbook_cfa_interference_breaker](https://github.com/Its-my-right/pocketbook_cfa_interference_breaker) | 纯 C + FFTW 的 **in-place 帧缓冲**滤波，双半径带通（`radius_min` / `radius_max_diviser`） | ⚠️ **GPL-3.0**（不可并入闭源项目）；构建目标 armv7-a softfp（koreader 平台），非 arm64 |
+| [Hakkin/PtDescreen](https://github.com/Hakkin/PtDescreen) | C + FFTW：FFT 峰值检测找网点频率/角度后掩膜（GIMP Descreen 同类思路） | GPL-2.0；2015 起停更，非网点图会误报 |
 
 收益边界参考 KCC issue：#771 维护者直言彩屏灰阶彩虹纹"本质是彩 e-ink 的物理限制"，**降分辨率 / 模糊只是缓解**。
 
@@ -69,17 +70,17 @@
 
 ### 4.4 AI 去摩尔纹：成熟但场景错配，且无端侧生态
 
-- **数据集全不覆盖网点**：见 [Awesome-Demoireing](https://github.com/rebeccaeexu/Awesome-Demoireing)（88★）。AIM-2018 "No text scenes"、LCDMoiré "Only text scenes" 且非真实、FHDMi / UHDM / TMM22 为 "Diverse scenes"——**无一个数据集覆盖漫画 screentone**。这类模型针对"相机 CFA 与屏幕子像素拍频"的合成彩色条纹训练，用在黑白漫画网点上大概率损伤线条。
+- **数据集全不覆盖网点**：见 [Awesome-Demoireing](https://github.com/rebeccaeexu/Awesome-Demoireing)（88★）。TIP-2018 "No text scenes"、LCDMoiré（AIM 2019 挑战赛数据集）"Only text scenes" 且非真实、FHDMi / UHDM / TMM22 为 "Diverse scenes"——**无一个数据集覆盖漫画 screentone**。这类模型针对"相机 CFA 与屏幕子像素拍频"的合成彩色条纹训练，用在黑白漫画网点上大概率损伤线条。
 - **端侧硬数据**：UHDM（[CVMI-Lab/UHDM](https://github.com/CVMI-Lab/UHDM)，Apache-2.0）官方 demo 注明 **CPU 下 4K 单图约 80s**。MBCNN（[arXiv:1909.11947](https://arxiv.org/abs/1909.11947)）、LBPNet、FHDe²Net、UniDemoire（MIT）均无端侧实证。
 - **唯一端侧实时路线不可用**：[DDA](https://github.com/zyxxmu/DDA)（ICLR 2023）超网按 patch 复杂度分配大小网络、骁龙 8 Gen1 实时，但**无 license、仅 PyTorch 权重、无 onnx/ncnn/mnn 移植**。
-- **端侧生态为空**：检索 `demoireing onnx` / `moire removal ncnn`，**全网 0 结果**，无任何第三方端侧推理移植。
+- **端侧生态为空**：检索 `demoireing onnx` / `moire removal ncnn`，**GitHub 仓库检索 0 结果**（仓库搜索不覆盖代码内容），无任何第三方端侧推理移植。
 - **方向相反的 MangaJaNai**（[the-database/MangaJaNai](https://github.com/the-database/MangaJaNai)）：不去网点，而是**按目标频率重新生成网点**——针对 1200p/1300p/1400p/1500p/1600p/1920p/2048p 七种常见数字版高度各训一个模型，"多数情况下正确复原了低质源图里已不可见的网点"。**但 license 为 CC BY-NC 4.0（非商业），商业应用不可用**（GUI 为 GPL-3.0）。
-- **反向检索亦为空**：`halftone removal neural` / `screentone removal deep learning` 等 6 组检索全部 0 结果；搜到的 `sketch2manga`、`ScreenStyle`、`ComfyUI-MangaScreen` 都是**生成**网点而非去除。**结论：漫画 screentone removal 的深度学习方向没有成熟开源生态。**
+- **反向检索亦为空**：`halftone removal neural` / `screentone removal deep learning` 等 6 组检索全部 0 结果；搜到的 `sketch2manga`、`ScreenStyle`、`ComfyUI-MangaScreen` 都是**生成**网点而非去除。唯一 NN 反例是 [curegit/deep-descreen](https://github.com/curegit/deep-descreen)（AGPL-3.0，实验性、未发布权重）：CNN 去扫描件印刷网点、保线稿。**结论：漫画 screentone removal 的深度学习方向没有成熟、可端侧的开源生态。**
 - **生态实测**：manga-image-translator 完整克隆 grep 后，`manga_translator/` 下无任何 moire / descreen / halftone 处理——"超分生态顺手处理网点"是错觉。
 
 ### 4.5 同类产品现状
 
-mihon（24.4k★）经 GitHub code search 确认**无任何** descreen / moire / ImageFilter 代码；Calibre（26.2k★）`moire` 0 命中、`descreen` 1 命中（非该用途）。**主流阅读器基本都把抗摩尔纹交给用户手动降分辨率**，是可差异化项，但无人做也说明重要性未达共识，宜保持可选项。
+mihon（24.4k★）全库 920 个 `.kt` 检索 descreen / moire 0 命中（唯一滤镜相关是灰度用的 `ColorMatrixColorFilter`）；Calibre（26.2k★）代码层 0 命中（`descreen` 仅命中 `is_widescreen` 子串与词典文件）；koreader 的相关需求仍是 open FR（[#11877](https://github.com/koreader/koreader/issues/11877)）。**主流阅读器基本都把抗摩尔纹交给用户手动降分辨率**，是可差异化项，但无人做也说明重要性未达共识，宜保持可选项。
 
 ## 5. HarmonyOS 端侧三通道（本机 SDK 实查，2026-10-16）
 
@@ -98,7 +99,7 @@ mihon（24.4k★）经 GitHub code search 确认**无任何** descreen / moire /
 在解码后、显示前，按强度档执行：
 
 ```
-GaussianBlur(k = 3/5/7) → bilateralFilter(d=7, σ_color = 10×level, σ_space = 80) → 3×3 Laplacian 回边
+GaussianBlur 5×5（档 1/2）/ 7×7（档 3） → bilateralFilter(d=7, σ_color = 30/50/80, σ_space = 80) → 3×3 Laplacian 回边（sh_point=5.56, sh_low=-1.14）
 ```
 
 用 ImageKit 原语即可完成，无新依赖，天然"只动网点不动线条"。
@@ -131,7 +132,22 @@ GaussianBlur(k = 3/5/7) → bilateralFilter(d=7, σ_color = 10×level, σ_space 
 - AIM/NTIRE 去摩尔纹挑战赛页面无法访问（CodaLab 搜索接口已废弃、`aim2023.csalab.org` 连接失败），**无有效链接，不做断言**。
 - SRMoire / DynaMoire 在 arXiv（title + all 多组关键词）与 GitHub 仓库搜索均 0 命中，**无法核验是否存在**。
 - Skia / Impeller 的具体滤波实现未能核验（skia.org 404、Direct3D 文档 404、OpenCV 文档站 403），故 §3 未据此下结论。
-- `Moire-Pattern-Detection`（AmadeusITGroup，license `NOASSERTION`）未深入读源码；`doubletone`（CC0，0★）、`deep-descreen`（AGPL-3.0，1★）未做源码验证，仅记录存在性。
+- `Moire-Pattern-Detection`（AmadeusITGroup，license `NOASSERTION`）未深入读源码；`doubletone`（CC0，0★）、`MopReM`（MIT，屏摄文档域）未做源码验证，仅记录存在性；`deep-descreen`（AGPL-3.0，1★）已读源码：实验性 CNN 去扫描件网点、未发布权重（见 §4.4）。
+
+## 9. 二次核验修订记录（2026-10-16）
+
+外部主张全部回一手来源复核，修正如下：
+
+| # | 原表述 | 修正后 | 依据 |
+|---|---|---|---|
+| 1 | pocketbook 项目「纯 C、arm64 可编译」 | **GPL-3.0**（不可并入闭源项目）；构建目标 **armv7-a softfp**，非 arm64 | 仓库 `LICENSE` 与 `makefile` |
+| 2 | KCC 掩膜「环形半径 + 135°/45° 方向掩膜」 | 高频（≥0.30 cycles/pixel）+ 135°/45° 对角线族（±10°，含 +90°/+180° 变体），幅度 ×0.1；补 ISC 许可 | `rainbow_artifacts_eraser.py:20-30` |
+| 3 | 数据集「AIM-2018 "No text scenes"」 | 该行实为 **TIP-2018**；「Only text scenes」对应 AIM 2019 的 LCDMoiré | Awesome-Demoireing 数据集表 |
+| 4 | Calibre「`descreen` 1 命中」 | 代码层 0 命中（`is_widescreen` 子串与词典文件） | 全仓检索 |
+| 5 | Screentone-Remover「GaussianBlur(5/7)、σ_color=10×level」 | 三档 = Gaussian 5×5/7×7 → bilateral σ_color=**30/50/80** | `stremove.py:18-26` |
+| 6 | 否定性措辞「全网 0 结果」 | 「**GitHub 仓库检索 0 结果**」（仓库搜索不覆盖代码内容） | GitHub Search API 语义 |
+
+补录：PtDescreen（GPL-2.0，§4.2）、deep-descreen（实验性 NN 去网点，§4.4）、koreader FR #11877（§4.5）、线稿/网点分离与「模糊→超分→线稿重融合」两条边缘路线（§4.1 注）。
 
 ---
 
