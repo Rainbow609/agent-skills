@@ -6,8 +6,8 @@
 
 | 文件 | 来源 | 部署方式 |
 |---|---|---|
-| `claude-settings.json` | `~/.claude/settings.json` 的脱敏模板：hooks 接线（Orca，已改 `$HOME` 相对路径）+ model/permissions/statusLine/env（**不含任何 token**） | install.sh 用 jq **合并**进本机 `~/.claude/settings.json`——本机 secrets 与本地独有键保留，模板键优先；新机首次直接落模板（需自行补 API 凭据） |
-| `codex-hooks.json` | `~/.codex/hooks.json` 快照（cmux 接线，cmd 已是 `command -v` 便携格式，无绝对路径） | **仅存档**，不反向同步——该文件由 cmux 安装器管理，Codex 的 `[hooks.state]` trusted_hash 与条目内容绑定，覆盖会造成信任失效 |
+| `claude-settings.json` | `~/.claude/settings.json` 的脱敏模板：hooks 接线（Orca，已改 `$HOME` 相对路径）+ model/permissions/statusLine/env（**不含任何 token**） | **hooks 段由 skillshare 托管**（条目 `orca`，adopt/备份/漂移检测，2026-10-16 起）；其余键由 install.sh 用 jq **合并**进本机 `~/.claude/settings.json`——本机 secrets 与本地独有键保留，模板键优先；新机首次直接落模板（需自行补 API 凭据）。skillshare 缺失时回退整模板 jq 合并 |
+| `codex-hooks.json` | `~/.codex/hooks.json` 快照（cmux 接线，cmd 已是 `command -v` 便携格式，无绝对路径） | **仅存档**，不反向同步——该文件由 cmux 安装器管理，Codex 的 `[hooks.state]` trusted_hash 与条目内容绑定，覆盖会造成信任失效。2026-10-16 发现 apm 曾把包内 `hooks/` 当「可执行原语」自动注入 claude/codex 两侧（codex 侧即覆盖本快照、破坏 trusted_hash；claude 侧与 skillshare 冲突产生重复注册），已在 `~/.apm/config.json` `deny` 该包的 hooks 集成并固化进 install.sh |
 | `orca/*.sh` | `~/.orca/agent-hooks/` 11 个脚本（Orca 应用安装，向本机 Orca 端点上报 agent 事件） | **仅存档**，不反向同步——Orca 升级会自行更新；脚本本身自带 `[ -x ]`/env 守卫，未装 Orca 的机器上静默空转 |
 
 ## 🌟 密钥纪律
