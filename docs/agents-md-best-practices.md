@@ -30,7 +30,7 @@
 1. **"放在后"才强**：所有工具都先注用户级、项目级在后 → 硬冲突规则写**项目层**比写全局层更可能生效。
 2. **"最近者胜"≠"合并"**：ZCode（实测）与 Copilot 是**替换语义**——子目录 AGENTS.md 会让仓库根那份整份不被读。**不可丢失的约束别只写仓库根**，也别指望子目录规则与它叠加。
 3. **目录级规则只在合并型工具里可靠**：Codex / Cursor / Gemini 合并；ZCode 替换；Kimi 靠模型自觉。
-4. **"用户级"不是跨工具共享的**：本机 `~/.claude/AGENTS.md` 是软链指向 `~/.zcode/AGENTS.md`，但 `~/.codex/AGENTS.md` 是**内容已分叉的独立副本**（3947 B vs 9566 B）→ 改一处不会同步另一处。
+4. **"用户级"默认不是跨工具共享的**：Codex 读的是 CODEX_HOME（`~/.codex`）下的独立文件——本机曾是 2026-06 的**分叉副本**（3947 B vs 9566 B）；2026-10-16 起 `~/.claude/AGENTS.md` 与 `~/.codex/AGENTS.md` 均已是指向 `~/.zcode/AGENTS.md` 的软链（install.sh 第⑨步幂等维护），改一处即全工具同步。
 5. **同一份文件在不同工具里"强度"不同**：ZCode 框定为 "OVERRIDE any default behavior"，Kimi 明文降权为 "not a privileged instruction channel"。跨工具通用的硬规则别指望 AGENTS.md 单独承载。
 6. **导入能力不通用**：只有 Claude Code（`@import`）与 OpenCode（`instructions` 数组）解析引用；ZCode / Codex / Cursor / Copilot **都不解析** → "一份真源多处引用"要按工具分别落地（各自文件、软链、或一行 `@AGENTS.md` 桩——见 §4.2）。
 7. **上限机制决定"关键约束写前面"**：Codex 是**总预算**（32 KiB 后**静默截断**，截断点之后内容等于不存在）；ZCode 单文件 100 KiB；Claude 单文件 4 MiB。
@@ -99,7 +99,8 @@
 
 - **全局层（`~/.zcode/AGENTS.md`）**：2026-10-16 精简 **9.6 KB/86 行 → 8.2 KB/78 行（-14% 字节）**——压缩委派判定/Git/Shell 段的冗长表述与括号解释，44 项承重 token 核验规则一条未删（此前的「≈190 行」为错误估计，已更正）；定位正确——只放跨项目恒真项（行为准则、委派、Shell/Git 权限、记忆与知识三轨）。进一步压缩需把委派/知识细则迁为按需加载的 skill（progressive disclosure），属语义变更，需用户定案。
 - **项目层（如 manbo-reader）**：按本文原则于 2026-10-16 精简 **16.2 KB/118 行 → 10.2 KB/84 行（-37% 字节）**，手法可复用：发版细节指向方法论文档、双写/委派细则并入全局（消除跨层重复）、lint 误报清单压成一行摘要；9 处 🌟 约束与 36 项承重 token 脚本核验无删减。未精简前 16.2 KB 已占 Codex 32 KiB 总预算一半——**别被行数骗了**（见 §2 度量口径）。
-- **待修项**：① `~/.codex/AGENTS.md` 是独立副本且已分叉（2026-06-17）→ 建议软链到 `~/.zcode/AGENTS.md`（Codex 会读 CODEX_HOME 的 AGENTS.md），否则 Codex 侧看不到新规则；② 若要用 Copilot / Cursor，需要各自的入口文件（本机项目均无 `.github/copilot-instructions.md`、`.cursor/rules/`）。
+- **已修复（2026-10-16）**：`~/.codex/AGENTS.md` 曾是独立分叉副本 → 其独有内容（MCP 工具优先 / Context7 用法 / 谨慎度折中）已通用化并入单一真源，原文件备份 `.bak-<ts>` 后改为软链；`install.sh` 新增第⑨步幂等维护 `~/.claude`、`~/.codex` 两处软链。
+- **待修项**：若要用 Copilot / Cursor，需要各自的入口文件（本机项目均无 `.github/copilot-instructions.md`、`.cursor/rules/`）。
 - **目录级**：ZCode 是替换语义（实测）→ 本机体系目前只在仓库根放 AGENTS.md、不依赖嵌套叠加，是安全做法 ✅；将来若加子目录规则，须确认目标工具是合并型。
 
 ## 7. 存疑与未证实
