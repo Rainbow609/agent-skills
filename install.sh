@@ -2,6 +2,7 @@
 # 用户层技能 / 智能体 / MCP / 全局 AGENTS.md 装配脚本 —— 仓库为单一真源，幂等可重跑。
 # 🌟 上游技能已全量 vendor 进 upstream/（GitHub Actions 周更开 PR 同步），本仓库即唯一技能源；
 #    下游一条命令 npx skills add 本仓库即可获得全部 88 个技能。
+# Claude 侧 MCP 与 hooks 由 skillshare 托管（缺失时回退脚本内 jq 合并，见 ④⑤）。
 set -euo pipefail
 shopt -s nullglob
 
@@ -9,6 +10,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CANONICAL="$HOME/.agents/skills"            # 全局技能库：npx skills 全局目标，ZCode/kimi-code/codex 等共用
 AGENTS_ZCODE="$HOME/.zcode/agents"          # ZCode 智能体（.md，含 color/model/tools 等 ZCode 专属字段）
 AGENTS_UNIVERSAL="$HOME/.agents/agents"     # 跨 agent 智能体（.agent.md，精简格式）
+SKILLSHARE_CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/skillshare"   # skillshare 中央库（Claude MCP/hooks 托管）
 
 log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m ⚠\033[0m %s\n' "$*"; }
@@ -25,6 +27,10 @@ if command -v apm >/dev/null; then
   mkdir -p "$HOME/.apm"
   [ -f "$HOME/.apm/apm.yml" ] && cp "$HOME/.apm/apm.yml" "$HOME/.apm/apm.yml.bak-$ts"
   cp "$REPO_DIR/apm/home-apm.yml" "$HOME/.apm/apm.yml"
+  # 🌟 apm 会把包内 hooks/ 目录当「可执行原语」自动集成进 claude/codex 配置——与本题分工冲突
+  #    （Claude hooks 归 skillshare、codex/cmux hooks 由工具自管仅存档）。个人级 deny 一次，
+  #    覆盖 hooks/mcp/bin/canvas/lsp（写 ~/.apm/config.json，幂等，deny 恒胜）。
+  apm deny --user Rainbow609/agent-skills >/dev/null 2>&1 || warn "apm deny 未生效，hooks 可能被 apm 重复注入（检查 ~/.apm/config.json）"
   if apm install -g; then
     log "apm 安装完成（lock: ~/.apm/apm.lock.yaml）"
   else
@@ -58,8 +64,12 @@ mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 ((${#zcode_agents[@]})) && cp "${zcode_agents[@]}" "$AGENTS_ZCODE/"
 ((${#universal_agents[@]})) && cp "${universal_agents[@]}" "$AGENTS_UNIVERSAL/"
 
-# ④ MCP 配置：均无密钥。ZCode 侧按 server 合并（保留 config.json 里的其他 server 与设置），
-#    config.json 不存在时（新机首次配置）以模板生成；Claude 侧为整文件覆盖。落盘前各自备份。
+# ④ MCP 配置：均无密钥。
+#    ZCode 侧：skillshare 的 MCP 客户端列表不含 zcode，无法接管，由本脚本 jq 按 server 合并
+#    （保留 config.json 里的其他 server 与设置；不存在时以模板生成）。
+#    Claude 侧：skillshare 接管——仓库定义导入 Skillshare 源后 sync 进 ~/.claude.json
+#    （Claude Code 唯一的用户级 MCP 路径；旧脚本写过的 ~/.claude/mcp.json 并非 Claude 读取路径）。
+#    skillshare 缺失时回退为 jq 直接合并进 ~/.claude.json。
 ZCODE_CONFIG="$HOME/.zcode/cli/config.json"
 if [ -f "$ZCODE_CONFIG" ]; then
   cp "$ZCODE_CONFIG" "$ZCODE_CONFIG.bak-$ts"
@@ -80,20 +90,55 @@ else
   log "已按模板生成 ${ZCODE_CONFIG}（新机首次配置）"
 fi
 if [ -d "$HOME/.claude" ]; then
-  [ -f "$HOME/.claude/mcp.json" ] && cp "$HOME/.claude/mcp.json" "$HOME/.claude/mcp.json.bak-$ts"
-  cp "$REPO_DIR/mcp/claude-mcp.json" "$HOME/.claude/mcp.json"
-  log "MCP 已写入 ~/.claude/mcp.json（备份 .bak-${ts}）"
+  if command -v skillshare >/dev/null; then
+    if [ ! -f "$SKILLSHARE_CFG_DIR/config.yaml" ]; then
+      log "初始化 skillshare 配置（无技能 target，仅托管 MCP/hooks）"
+      skillshare init --no-copy --no-git --no-targets --no-skill --no-tui || warn "skillshare init 失败"
+    fi
+    for srv in $(jq -r '.mcpServers | keys[]' "$REPO_DIR/mcp/claude-mcp.json"); do
+      skillshare mcp import "$srv" --from claude --file "$REPO_DIR/mcp/claude-mcp.json" \
+        --target claude --replace --no-tui || warn "skillshare 导入 ${srv} 失败"
+    done
+    skillshare sync mcp -g || warn "skillshare sync mcp 失败"
+    log "Claude MCP 已由 skillshare 落盘 ~/.claude.json（源：mcp/claude-mcp.json）"
+  else
+    warn "未装 skillshare（brew install skillshare 可启用托管），回退 jq 合并 ~/.claude.json"
+    if [ -f "$HOME/.claude.json" ]; then
+      cp "$HOME/.claude.json" "$HOME/.claude.json.bak-$ts"
+      if jq --slurpfile mcp "$REPO_DIR/mcp/claude-mcp.json" \
+          '.mcpServers = ((.mcpServers // {}) + $mcp[0].mcpServers)' \
+          "$HOME/.claude.json" > "$HOME/.claude.json.new" && [ -s "$HOME/.claude.json.new" ]; then
+        mv "$HOME/.claude.json.new" "$HOME/.claude.json"
+        log "MCP 已合并进 ~/.claude.json（备份 .bak-${ts}）"
+      else
+        rm -f "$HOME/.claude.json.new"
+        echo "错误：jq 合并失败，~/.claude.json 未改动（原文件备份在 .bak-${ts}）" >&2
+        exit 1
+      fi
+    else
+      warn "~/.claude.json 不存在（先启动一次 Claude Code 再重跑），Claude MCP 回退跳过"
+    fi
+  fi
 else
   warn "未找到 ~/.claude，Claude MCP 跳过"
 fi
 
 # ⑤ Claude 个人配置（hooks 接线 / 模型 / 权限等）：仓库为脱敏模板（不含任何 token）。
-#    合并语义：本机 secrets 与本地独有键保留，模板键优先（jq 右侧覆盖）。
+#    hooks 段（7 个 orca 事件）由 skillshare 托管（条目 orca，adopt/备份/漂移检测一体），
+#    其余键由本脚本 jq 合并（保留本机 secrets 与本地独有键，模板键优先）。
+#    skillshare 缺失时回退为整模板合并（含 hooks，即旧行为）。
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 if [ -d "$HOME/.claude" ]; then
+  use_skillshare=false
+  if command -v skillshare >/dev/null && [ -f "$SKILLSHARE_CFG_DIR/config.yaml" ]; then use_skillshare=true; fi
   if [ -f "$CLAUDE_SETTINGS" ]; then
     cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.bak-$ts"
-    if jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_DIR/hooks/claude-settings.json" > "$CLAUDE_SETTINGS.new" && [ -s "$CLAUDE_SETTINGS.new" ]; then
+    if [ "$use_skillshare" = true ]; then
+      merge='.[0] * (.[1] | del(.hooks))'   # hooks 归 skillshare，其余键照旧合并
+    else
+      merge='.[0] * .[1]'
+    fi
+    if jq -s "$merge" "$CLAUDE_SETTINGS" "$REPO_DIR/hooks/claude-settings.json" > "$CLAUDE_SETTINGS.new" && [ -s "$CLAUDE_SETTINGS.new" ]; then
       mv "$CLAUDE_SETTINGS.new" "$CLAUDE_SETTINGS"
       log "Claude settings 已合并（保留本机 secrets；备份 .bak-${ts}）"
     else
@@ -104,6 +149,15 @@ if [ -d "$HOME/.claude" ]; then
   else
     cp "$REPO_DIR/hooks/claude-settings.json" "$CLAUDE_SETTINGS"
     warn "已生成 Claude settings（模板不含 token，请补 env.ANTHROPIC_AUTH_TOKEN 后再用）"
+  fi
+  if [ "$use_skillshare" = true ]; then
+    entry_file="$(mktemp)"
+    jq '{description: "Orca agent hooks (claude)", bindings: {claude: {events: .hooks}}}' \
+      "$REPO_DIR/hooks/claude-settings.json" > "$entry_file"
+    skillshare hooks add orca --file "$entry_file" --replace --sync -g \
+      || warn "skillshare hooks 托管失败（hooks 已在 settings 中，功能不受影响）"
+    rm -f "$entry_file"
+    log "Claude hooks 已由 skillshare 托管（条目 orca，源：hooks/claude-settings.json）"
   fi
 else
   warn "未找到 ~/.claude，Claude settings 跳过"
