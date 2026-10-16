@@ -158,4 +158,25 @@ if [ -d "$HOME/.iflow" ]; then
   log "opsx 命令已落盘 ~/.iflow/commands/"
 fi
 
+# ⑨ 各 agent 的全局规则软链：Claude Code / Codex 复用 ~/.zcode/AGENTS.md 单一真源（幂等；真实文件先备份再替换）。
+for d in "$HOME/.claude" "$HOME/.codex"; do
+  if [ ! -d "$d" ]; then warn "未找到 ${d}，全局规则软链跳过"; continue; fi
+  link="$d/AGENTS.md"
+  if [ -L "$link" ]; then
+    if [ "$(readlink "$link")" = "$ZCODE_AGENTS" ]; then
+      log "${link} 已指向单一真源，跳过"
+    else
+      ln -sfn "$ZCODE_AGENTS" "$link"
+      log "${link} 重定向 -> ${ZCODE_AGENTS}"
+    fi
+  elif [ -f "$link" ]; then
+    cp "$link" "$link.bak-$ts"
+    ln -sfn "$ZCODE_AGENTS" "$link"
+    log "${link} 原文件已备份 .bak-${ts} 并改为软链"
+  else
+    ln -s "$ZCODE_AGENTS" "$link"
+    log "已建立软链 ${link} -> ${ZCODE_AGENTS}"
+  fi
+done
+
 log "完成。上游技能由 GitHub Actions 周更开 PR；改自有技能/智能体/MCP/hooks/commands/AGENTS.md 后重跑本脚本。"
