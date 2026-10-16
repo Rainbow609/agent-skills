@@ -28,7 +28,39 @@
 - 触发顺序：`onCreate()` / `onNewWant()` → `onWindowStageRestore()`；页面栈自动恢复**仅支持 router**（`navigation` 应用不迁移页面栈，需自行经 want 传页面信息手动加载）。
 - 源端接续后是否退出，由 want 里的 `SUPPORT_CONTINUE_SOURCE_EXIT_KEY` 控制；长内容/阅读类官方建议源端退出（涉听书可仅暂停）。
 
-## 4. 🌟 坑清单（多为官方文档没有明写的实感）
+## 4. 🌟 进度接续三场景配方（全文精读 `bpta-application-continue-progess`，2026-10-16）
+
+通用骨架＝§1 五步，外加**恢复逻辑统一封装**：官方示例把恢复提取为 `continueRestore(want)` 公共方法，供 `onCreate` / `onNewWant` 的 `LaunchReason.CONTINUATION` 分支共用；先写 AppStorage 标志位与数据、最后 `restoreWindowStage(new LocalStorage())`，页面首帧读标志做一次性恢复。
+
+### 4.1 长列表（List / Grid / Scroll / WaterFlow）
+
+先试系统路，不满足再自定义：
+
+- **系统路 `.restoreId(整数)`**：通用属性（API 8 起，元服务 API 11 起），系统按 Id 配对两端组件自动恢复滚动状态。边界（一手复核 `ts-universal-attributes-restoreid`）：
+  - List(API 8) / Grid(API 9)：迁移顶部条目**索引**，对端将该条目置顶；Grid 的 **ScrollBar 位置不迁**。
+  - Scroll(API 9)：迁移**绝对偏移(vp)**，两端显示规格/布局不一致时失准。
+  - WaterFlow(API 11)：**索引 + 顶部 FlowItem 主轴偏移(vp)，四者中精度最高**。
+  - 同应用内各迁移组件的 restoreId 必须唯一，重复＝两端配对失败。
+- **自定义路**：`onDidScroll` 记 offset → `onContinue` 写 wantParam → 对端 `onDidBuild()` 一次性 `scroller.scrollTo()` 恢复。两个官方模式：
+  - `onDidBuild` 在**首次 build 完成后只回调一次**（后续重渲染不回调），天然适合一次性恢复（配布尔标志）。
+  - 恢复期间用 `setCurrentOffset` 标志挡住 `onDidScroll` 回写，否则恢复值被初始滚动事件冲掉。
+
+### 4.2 媒体播放（avPlayer）
+
+- 进度源：`avPlayer.on('timeUpdate')` 写 AppStorage；**用户拖进度条期间置 `isSliderAction` 守卫**，不回写进度。
+- 迁移内容：播放列表集数 + 播放状态 + 进度，官方建议再带播放设置（画质/音频等）。
+- 恢复：avPlayer 初始化完成后判接续标志 → `seek(continueTime)` → 清标志。
+
+### 4.3 Web 组件（ArkWeb）
+
+- 滚动位置在网页内部，ArkUI 层拿不到——用 `runJavaScript()` 读写 `document.getElementById(...).scrollTop`：源端 `onTouch(Up)` 读一次；对端在 **`onPageEnd`**（页面加载完成）再写回，URL 一并进 wantParam。
+
+### 4.4 官方示例两个可借鉴模式 + 一个注意点
+
+- wantParam 除业务进度外还迁移**一多断点值**（对端按断点出合适布局）与 **NavPathStack 栈顶页名**（`getAllPathName()` 末项；页面栈自动恢复仅 router，见 §3）。
+- ⚠️ 官方示例恢复用真值守卫 `want.parameters.key && AppStorage.setOrCreate(...)`：值为 0（列表顶 / 0:00）时跳过恢复——因缺省态恰为 0 故无害，照抄前想清楚语义。
+
+## 5. 🌟 坑清单（多为官方文档没有明写的实感）
 
 - `onContinue` 抛异常 = **静默中断**：系统无提示、日志留痕 → 必须 try-catch + hilog 打点分段定位。
 - 接续数据**一次性搬运**：对端恢复后要主动落定状态，失败即丢。
@@ -38,7 +70,7 @@
 - 跨 APPID（手机 / PC 拆分不同包）接续需 `continueBundleName` + 在 AGC 申请「接续服务」；同一开发者不同 BundleName 仅需 `continueBundleName`。
 - 官方「新闻阅读」垂类（电子书/听书）建议：发起页 = 书籍首页/阅读页，同步阅读与听书进度。
 
-## 5. 调试配方
+## 6. 调试配方
 
 ```bash
 # 1) 组网检查：输出 RemoteDeviceInfo 列表即已成功组网的设备（双机前提先验它）
@@ -52,13 +84,13 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 - `aa` **没有** `continue` 子命令；网传 `hdc emulator start` / `aa continue` 均为杜撰，勿照抄（已对官方命令表核否）。
 - 失败排查：DistributedSchedule 错误码 `16300501`（系统服务异常），常见根因是软总线套接字权限。
 
-## 6. 存疑（引用前复核，勿当定论）
+## 7. 存疑（引用前复核，勿当定论）
 
 - `onContinue` 的 Promise 异步版本起点：接口参考页写 API 18、最佳实践页写 API 12——**官方自相矛盾**（2026-10-16 查）。
 - 权限口径冲突：`free-flow-faqs-1` FAQ 仍按 API 11 及以前口径写「需申请 `DISTRIBUTED_DATASYNC`」。
 - 源端返回 `REJECT` 后的系统后续行为，官方未说明。
 
-## 7. 官方资料索引（`devecocli docs read "<路径 ID>"` 可直接复核）
+## 8. 官方资料索引（`devecocli docs read "<路径 ID>"` 可直接复核）
 
 | 文档 | 路径 ID |
 | --- | --- |
@@ -69,5 +101,5 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 | UIAbility（onWindowStageRestore / onContinue 成对） | `API参考/Ability_Kit_程序框架服务/ArkTS_API/Stage模型能力的接口/ohos_app_ability_UIAbility_带界面的应用组件_/js-apis-app-ability-uiability` |
 | 不同 APPID 接续 FAQ | `FAQ/自由流转/不同APPID的应用如何实现应用接续/free-flow-faqs-2` |
 
-> 一手复核时间：2026-10-16（Want 200KB 分界、`onWindowStageRestore` 语义、aa `-c` 语义均对官方原文核对）。
+> 一手复核时间：2026-10-16（Want 200KB 分界、`onWindowStageRestore` 语义、aa `-c` 语义均对官方原文核对；同日补 §4——restoreId 支持矩阵与 onDidBuild「仅首次 build 后回调一次」语义对官方原文核对）。
 > 落地案例：manbo-reader（HarmonyOS 漫画/电子书阅读器）——接续改造前置调研、项目侧障碍与策略取舍见其 `docs/continuation-index.md`。
