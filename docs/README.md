@@ -14,6 +14,7 @@
 | `tag-based-release-workflow.md` | tag 唯一版本源：打 tag 之后的开发与版本演进 | manbo-reader 实践 | 2026-10-15 |
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
 | `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
+| `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
 
 另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
 
