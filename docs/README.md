@@ -17,6 +17,7 @@
 | `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
 | `ai-coding-workflow-openspec.md` | AI Coding 工作流参考：初始化三件套（Skills/MCP/AGENTS.md）、OpenSpec opsx 六命令与按阶段模型分级、提示词模板、giscus strict=SHA-1 机制与跨语言评论聚合 | 外部博客调研（Ruixe 2026-09）+ giscus 官方文档一手复核 | 2026-10-16 |
 | `openspec-official-guide.md` | OpenSpec/OPSX 官方文档精读：心智模型、core/expanded 双 profile、spec-driven 权威契约（delta 四操作/场景格式硬约束/复选框解析）、元数据与配置体系、生命周期语义、CLI 机器契约、坑清单与 manbo 对照 | 官方仓库 docs/ + docs-lab/ 一手精读（2026-10-16） | 2026-10-16 |
+| `matt-pocock-skills-guide.md` | Matt Pocock Skills 官方精读：四大失败模式哲学、user/model 两层调用轴、idea→ship 主链与三 on-ramp、GLOSSARY/ADR 共享语言、主链技能硬规则（seam/tracer bullet/双轴评审/door call）、writing-for-agents 写作方法论、官方已知 bug 清单 | 官方仓库 README/SCOPE/AGENTS/GLOSSARY + 3 核心 SKILL.md 精读，其余 30+ 技能 docs 子代理通读（2026-10-16） | 2026-10-16 |
 
 另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
 
