@@ -1,7 +1,7 @@
 # 图像抗摩尔纹（anti-moiré / descreen）：原理、方案与端侧落地
 
 > 适用前提：HarmonyOS（及一般移动端）应用展示**高分辨率扫描件/网点图**（漫画、报纸、传真、翻拍屏幕照）时出现横竖条纹，需做去/抗摩尔纹。
-> 核实时间：2026-10-16（同日经二次核验修订，记录见 §9）。方法：GitHub 实访 + 源码核对 + 本机 HarmonyOS SDK 头文件实查。
+> 核实时间：2026-10-16（经二次核验与三次跨模型复核，记录见 §9/§10）。方法：GitHub 实访 + 源码核对 + 本机 HarmonyOS SDK 头文件实查。
 > 项目特化的现状分析、file:line 与借鉴建议留在 manbo-reader `docs/antimoire-survey.md`，本文只留通用机制与方案判断。
 
 ## 1. 先分清三类摩尔纹（最常见的选型错误）
@@ -28,16 +28,19 @@
 
 **第三方背书**：Kindle Comic Converter 走同一条路，README 明说缩到设备原生分辨率"可以改善续航、翻页速度"，大图用 `LANCZOS`、小图才用 `BICUBIC`（[image.py:603](https://github.com/ciromattia/kcc/blob/master/kindlecomicconverter/image.py)）。
 
+另两条工程层佐证（三次探索补录）：OpenCV `INTER_AREA` 注释原文 "gives moire'-free results"（降采样面积平均）；Pillow `thumbnail` 默认 `reducing_gap=2.0`（先整数倍 box 归约再重采样，两段式）。
+
 ## 3. 渲染层已被主流平台放弃（两条负面证据）
 
 不要指望在渲染管线里做抗摩尔纹：
 
 - **浏览器**：MDN `image-rendering` 的 `auto` 默认由 UA 决定（Firefox 3.0 起 Gecko 用双线性）；规范里的 `high-quality` **无浏览器支持**；`crisp-edges` / `pixelated` 是最近邻，**反而放大摩尔纹**（[MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/image-rendering)）。
 - **Android**：`BitmapFactory.Options.inSampleSize` 只做子采样（省内存，非抗锯齿），`inDither` 在 **API 24 已废弃并忽略**（[Android Reference](https://developer.android.com/reference/android/graphics/BitmapFactory.Options)）。
+- **Android 的正解（在纹理层）**：`Bitmap.setHasMipMap` 官方注释"If you know that you are going to draw this bitmap at less than 50% of its original size, you may be able to obtain a higher quality by turning this property on."——正统出路是纹理 mipmap，而不是 `BitmapFactory` 选项。
 
 **渲染层唯一值得做的**：把「缩小时的插值质量」做成用户可见开关（低 / 中 Mipmap / 高），默认选 Mipmap。ArkUI 的 `ImageInterpolation.Medium` 即系统 Mipmap 三角过滤，是把窗口内高频成分按面积平均掉，成本仅一处 `.interpolation()` 属性。
 
-> ⚠️ 存疑：`ImageInterpolation.Medium` 是否严格等于 Mipmap，本次仅据第三方项目的文案认定，**未查 HarmonyOS 官方 API 文档交叉验证**。照搬前请用 `devecocli docs search` 确认。
+> ✅ 已确认（三次探索补验）：官方知识库 API 参考明确 `ImageInterpolation` 枚举——`None`=最近邻 / `Low`=双线性 / **`Medium`=MipMap** / `High`=Cubic（`devecocli docs search` 命中）。
 
 ## 4. 方案盘点
 
@@ -56,11 +59,11 @@
 | 项目 | 做法 | 备注 |
 | --- | --- | --- |
 | [6o6o/fft-descreen](https://github.com/6o6o/fft-descreen) | 归一化幅度谱阈值建 mask → 膨胀 + 高斯羽化 → 乘性衰减 | MIT，最贴合扫描件网纹 |
-| [ciromattia/kcc](https://github.com/ciromattia/kcc) `--eraserainbow` | `rfft2` → 高频（≥0.30 cycles/pixel）+ 135°/45° 对角线族（±10°）掩膜 → 幅度 ×0.1 → `irfft2`，RGB↔YUV 切换 | 目标是彩 e-ink 彩虹纹，非网点；ISC 许可 |
+| [ciromattia/kcc](https://github.com/ciromattia/kcc) `--eraserainbow` | `rfft2` → 高频（≥0.30 cycles/pixel）+ 135°/45° 对角线族（±10°）掩膜 → 幅度 ×0.1 → `irfft2`，RGB→YUV 仅改亮度(Y)通道 | 目标是彩 e-ink 彩虹纹，非网点；ISC 许可 |
 | [Its-my-right/pocketbook_cfa_interference_breaker](https://github.com/Its-my-right/pocketbook_cfa_interference_breaker) | 纯 C + FFTW 的 **in-place 帧缓冲**滤波，双半径带通（`radius_min` / `radius_max_diviser`） | ⚠️ **GPL-3.0**（不可并入闭源项目）；构建目标 armv7-a softfp（koreader 平台），非 arm64 |
 | [Hakkin/PtDescreen](https://github.com/Hakkin/PtDescreen) | C + FFTW：FFT 峰值检测找网点频率/角度后掩膜（GIMP Descreen 同类思路） | GPL-2.0；2015 起停更，非网点图会误报 |
 
-收益边界参考 KCC issue：#771 维护者直言彩屏灰阶彩虹纹"本质是彩 e-ink 的物理限制"，**降分辨率 / 模糊只是缓解**。
+收益边界参考 KCC issue：#771 维护者直言彩屏灰阶彩虹纹"本质是彩 e-ink 的物理限制"，**降分辨率 / 模糊只是缓解**。调用顺序为**先缩小后清理**：先 `resizeImage()` 再 `optimizeForDisplay(eraserainbow)`——频域衰减处理缩小后的残余纹样，不替代缩小。
 
 ### 4.3 选择性掩膜（最值得借鉴的思路）
 
@@ -73,14 +76,16 @@
 - **数据集全不覆盖网点**：见 [Awesome-Demoireing](https://github.com/rebeccaeexu/Awesome-Demoireing)（88★）。TIP-2018 "No text scenes"、LCDMoiré（AIM 2019 挑战赛数据集）"Only text scenes" 且非真实、FHDMi / UHDM / TMM22 为 "Diverse scenes"——**无一个数据集覆盖漫画 screentone**。这类模型针对"相机 CFA 与屏幕子像素拍频"的合成彩色条纹训练，用在黑白漫画网点上大概率损伤线条。
 - **端侧硬数据**：UHDM（[CVMI-Lab/UHDM](https://github.com/CVMI-Lab/UHDM)，Apache-2.0）官方 demo 注明 **CPU 下 4K 单图约 80s**。MBCNN（[arXiv:1909.11947](https://arxiv.org/abs/1909.11947)）、LBPNet、FHDe²Net、UniDemoire（MIT）均无端侧实证。
 - **唯一端侧实时路线不可用**：[DDA](https://github.com/zyxxmu/DDA)（ICLR 2023）超网按 patch 复杂度分配大小网络、骁龙 8 Gen1 实时，但**无 license、仅 PyTorch 权重、无 onnx/ncnn/mnn 移植**。
+- **2024–25 新方法（三次探索补录）**：[UnDeM](https://github.com/zysxmu/UnDeM)（无配对数据，17★，无 license）、[Moire-Zero](https://github.com/sngryongLee/Moire-Zero)（46★，无 license）——研究代码，无端侧权重。
+- **运行时非空白、权重才是缺口**：ncnn 官方提供 HarmonyOS 预编译包（Vulkan / CPU-only）；HuggingFace 检索 moiré 仅 5 个文档**检测器**、无任何去纹/复原权重。
 - **端侧生态为空**：检索 `demoireing onnx` / `moire removal ncnn`，**GitHub 仓库检索 0 结果**（仓库搜索不覆盖代码内容），无任何第三方端侧推理移植。
 - **方向相反的 MangaJaNai**（[the-database/MangaJaNai](https://github.com/the-database/MangaJaNai)）：不去网点，而是**按目标频率重新生成网点**——针对 1200p/1300p/1400p/1500p/1600p/1920p/2048p 七种常见数字版高度各训一个模型，"多数情况下正确复原了低质源图里已不可见的网点"。**但 license 为 CC BY-NC 4.0（非商业），商业应用不可用**（GUI 为 GPL-3.0）。
-- **反向检索亦为空**：`halftone removal neural` / `screentone removal deep learning` 等 6 组检索全部 0 结果；搜到的 `sketch2manga`、`ScreenStyle`、`ComfyUI-MangaScreen` 都是**生成**网点而非去除。唯一 NN 反例是 [curegit/deep-descreen](https://github.com/curegit/deep-descreen)（AGPL-3.0，实验性、未发布权重）：CNN 去扫描件印刷网点、保线稿。**结论：漫画 screentone removal 的深度学习方向没有成熟、可端侧的开源生态。**
+- **反向检索亦为空**：`halftone removal neural` / `screentone removal deep learning` 等 6 组检索全部 0 结果；搜到的 `sketch2manga`、`ScreenStyle`、`ComfyUI-MangaScreen` 都是**生成**网点而非去除。唯一 NN 反例是 [curegit/deep-descreen](https://github.com/curegit/deep-descreen)（AGPL-3.0，实验性、未发布权重、**仓库已归档**）：CNN 去扫描件印刷网点、保线稿。**结论：漫画 screentone removal 的深度学习方向没有成熟、可端侧的开源生态。**
 - **生态实测**：manga-image-translator 完整克隆 grep 后，`manga_translator/` 下无任何 moire / descreen / halftone 处理——"超分生态顺手处理网点"是错觉。
 
 ### 4.5 同类产品现状
 
-mihon（24.4k★）全库 920 个 `.kt` 检索 descreen / moire 0 命中（唯一滤镜相关是灰度用的 `ColorMatrixColorFilter`）；Calibre（26.2k★）代码层 0 命中（`descreen` 仅命中 `is_widescreen` 子串与词典文件）；koreader 的相关需求仍是 open FR（[#11877](https://github.com/koreader/koreader/issues/11877)）。**主流阅读器基本都把抗摩尔纹交给用户手动降分辨率**，是可差异化项，但无人做也说明重要性未达共识，宜保持可选项。
+mihon（24.4k★）全库 920 个 `.kt` 检索 descreen / moire 0 命中（唯一滤镜相关是灰度用的 `ColorMatrixColorFilter`）；官方 issue [#244](https://github.com/mihonapp/mihon/issues/244)（自动修 moire）2024-08 被关闭为 [#42](https://github.com/mihonapp/mihon/issues/42)（缩放算法与锐化，open）之重复；Calibre（26.2k★）代码层 0 命中（`descreen` 仅命中 `is_widescreen` 子串与词典文件）；koreader 的相关需求仍是 open FR（[#11877](https://github.com/koreader/koreader/issues/11877)），且其维护者明确高质量缩放 "best left to a pre-processing pass"（[#10813](https://github.com/koreader/koreader/issues/10813)）；Perfect Viewer（闭源）逐页可选 Averaging / Bilinear / Bicubic / Lanczos3 平滑滤波、无自动 descreen。**唯一找到的同类已实现方案**是 mihon fork [MihonSY](https://github.com/ruzhe85/MihonSY)（33★，Apache-2.0）：「AI 面积回缩（降低摩尔纹）」，缩小比 <0.85 时按视图尺寸高斯核回缩（σ=0.5×档位，原生 resample，默认关）——其根因注释与本文 §2 判断一致。**主流阅读器基本都把抗摩尔纹交给用户手动降分辨率**，是可差异化项，但无人做也说明重要性未达共识，宜保持可选项。
 
 ## 5. HarmonyOS 端侧三通道（本机 SDK 实查，2026-10-16）
 
@@ -128,11 +133,11 @@ GaussianBlur 5×5（档 1/2）/ 7×7（档 3） → bilateralFilter(d=7, σ_colo
 
 ## 8. 存疑
 
-- `ImageInterpolation.Medium` = Mipmap 未经官方文档交叉验证（§3）。
+- ~~`ImageInterpolation.Medium` = Mipmap 未经官方文档交叉验证（§3）。~~ **已解除**（三次探索补验，官方知识库确认，见 §3）。
 - AIM/NTIRE 去摩尔纹挑战赛页面无法访问（CodaLab 搜索接口已废弃、`aim2023.csalab.org` 连接失败），**无有效链接，不做断言**。
 - SRMoire / DynaMoire 在 arXiv（title + all 多组关键词）与 GitHub 仓库搜索均 0 命中，**无法核验是否存在**。
 - Skia / Impeller 的具体滤波实现未能核验（skia.org 404、Direct3D 文档 404、OpenCV 文档站 403），故 §3 未据此下结论。
-- `Moire-Pattern-Detection`（AmadeusITGroup，license `NOASSERTION`）未深入读源码；`doubletone`（CC0，0★）、`MopReM`（MIT，屏摄文档域）未做源码验证，仅记录存在性；`deep-descreen`（AGPL-3.0，1★）已读源码：实验性 CNN 去扫描件网点、未发布权重（见 §4.4）。
+- `Moire-Pattern-Detection`（AmadeusITGroup，license `NOASSERTION`）未深入读源码；`doubletone`（CC0，0★）、`MopReM`（MIT，屏摄文档域）未做源码验证，仅记录存在性；`deep-descreen`（AGPL-3.0，1★）已读源码：实验性 CNN 去扫描件网点、未发布权重、仓库已归档（见 §4.4）。
 
 ## 9. 二次核验修订记录（2026-10-16）
 
@@ -148,6 +153,14 @@ GaussianBlur 5×5（档 1/2）/ 7×7（档 3） → bilateralFilter(d=7, σ_colo
 | 6 | 否定性措辞「全网 0 结果」 | 「**GitHub 仓库检索 0 结果**」（仓库搜索不覆盖代码内容） | GitHub Search API 语义 |
 
 补录：PtDescreen（GPL-2.0，§4.2）、deep-descreen（实验性 NN 去网点，§4.4）、koreader FR #11877（§4.5）、线稿/网点分离与「模糊→超分→线稿重融合」两条边缘路线（§4.1 注）。
+
+## 10. 三次探索差异记录（跨模型复核，2026-10-16）
+
+换用另一模型、干净上下文独立重做课题后对表：**核心结论无事实冲突**（minification 机制与「解码期降采样」方向、KCC 参数、Screentone-Remover 空域三级、fft-descreen MIT、MangaJaNai CC BY-NC、DDA 端侧结论、mihon / Calibre / KOReader 无内置、Android / MDN 负面证据均复现）。
+
+本轮新增并已并入正文：MihonSY「AI 面积回缩」（§4.5，唯一找到的同类已实现方案）；OpenCV INTER_AREA / Pillow reducing_gap / `setHasMipMap` 三条佐证（§2/§3）；KOReader 维护者原话、mihon issue #244→#42 轨迹、Perfect Viewer（§4.5）；ncnn HarmonyOS 预编译包与 HF 检索复核（§4.4）；UnDeM / Moire-Zero（§4.4）；`Medium`=MipMap 官方确认（§3）。
+
+表述差异（以本文为准）：本轮将 Screentone-Remover 概括为「高斯→均值→锐化」漏掉 bilateralFilter——本文为源码核对版；「ESDNet 4K ~17ms」等新主张未获独立复核，不采信。
 
 ---
 
