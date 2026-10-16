@@ -77,7 +77,9 @@ CodeGenie 产线发布的 MCP server（**注意：无公开仓库、无 License 
 
 **`verify_ui` 的额外依赖**：自然语言 UI 校验需要视觉模型（需支持 Function Call），
 配 `UI_VERIFY_BASE_URL` / `UI_VERIFY_API_KEY` / `UI_VERIFY_MODEL_NAME` 才能用；
-官方说明其操作面目前仅点击/滑动/按键、基于截图判断。
+官方说明其操作面目前仅点击/滑动/按键、基于截图判断。🌟 端点选 opencode Go 时的会话头墙
+（强制 `x-opencode-session`，原生二进制发不了自定义头）与本地注入代理配方见
+[opencode-zen-gateway-session-header.md](opencode-zen-gateway-session-header.md)。
 
 **`start_app` 的关键行为**：设备列表包含已安装但未运行的模拟器，选中会自动启动——不接管
 模拟器生命周期也能跑起应用。
