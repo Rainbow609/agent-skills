@@ -1,6 +1,6 @@
 ---
 name: harmonyos-device-testing
-description: HarmonyOS/鸿蒙应用真机与模拟器自动化测试最佳实践：hdc/uitest 命令语义、Swiper 滑动手势坑、模拟器生命周期、E2E 流水线配方、真机性能与功耗采集（SP_daemon/hitrace 掉帧分析、卡顿率口径、耗电排查）。当需要用 hdc shell uitest 驱动 UI、做模拟器回归、排查"注入滑动不生效"、或测试掉帧/卡顿/耗电问题时使用。
+description: HarmonyOS/鸿蒙应用真机与模拟器自动化测试最佳实践：hdc/uitest 命令语义、Swiper 滑动手势坑、模拟器生命周期、E2E 流水线配方、无截图压测三源（dumpLayout/hilog/SP_daemon）、真机性能与功耗采集（SP_daemon/hitrace 掉帧分析、卡顿率口径、耗电排查）。当需要用 hdc shell uitest 驱动 UI、做模拟器回归、做不依赖截图的压测验证、排查"注入滑动不生效"、或测试掉帧/卡顿/耗电问题时使用。
 ---
 
 # HarmonyOS 设备自动化测试（hdc + uitest）
@@ -135,7 +135,30 @@ trace 关键字速查（直接搜）：
 - 退后台静默 60s 再采样：揪常驻定时器/心跳（预期：退后台后应用 CPU 归零）；
 - 代码侧嫌疑清单：挂钟 `setInterval` 驱动动画（应换 vsync 帧循环并核对 start/stop 配对）、120Hz 上每帧都出内容（旧 60Hz 定时器半速出帧，迁 vsync 后 GPU 占用翻倍属预期行为，掉帧看 jitters 而非帧数）、高频回调内打日志/分配、PixelMap 未释放、keepScreenOn 滥用。
 
-## 7. 相关资源
+## 7. 🌟 无截图压测三源配方（功能/性能/崩溃验证可 100% 不依赖截图）
+
+实测结论（manbo-reader 书架压测，Pura 90 Pro 模拟器，2026-10，两轮）：功能/性能/崩溃三类验证**可 100% 无截图完成**，用以下三源交叉：
+
+| 验证项 | 来源 |
+|---|---|
+| 元素存在/文本/计数/选中态/**滚动位移（bounds 变化）** | `uitest dumpLayout` 控件树 JSON（带 bounds） |
+| 压测期行为计数（重建/请求/解码闸门峰值/抑制类归零） | hilog：应用 debug 构建的**每秒聚合埋点行**（manbo＝domain `0x0000` tag `PerfProbe`；先读应用侧埋点源拿准确 key） |
+| CPU/内存 | SP_daemon CSV（`ProcCpuUsage`/`pss`；**模拟器 fps 恒 0 无帧数据**——帧级仍走 §6 真机口径） |
+| 崩溃 | faultlogger 目录差分 + **APP_CRASH 下次启动回投**（压测后重启一次 app 回捞）+ hilog E/F 过滤 |
+
+**MCP `get_app_ui_tree`（deveco-codegenie，full 模式）与 dumpLayout 的信息含量差异**（实测）：
+
+- schema：`content.$children` 递归，节点文本在 `$attrs.content`（另有 `accessibilityText`）；13MB/522 节点量级
+- **文本、结构、样式尺寸（vp/fontSize/padding）齐全，但绝对坐标为空**（`position`/`offset` 无值）→ 状态/内容/样式查 MCP 树，几何/位移查 dumpLayout，两工具互补
+- 用法：MCP 需先 `init_project_path`，多设备带 `hvd` 参数；输出为 JSON 文件路径
+
+**驱动坑（§3 延伸）**：sub-List（zIndex 覆盖在 Swiper 之上）的 ListItem 区域会**吞左向手势**——同页右滑可翻、chip 点击全通，属注入受限而非产品回归；降级方案＝**chip 点击风暴**替代滑动风暴，仍可驱动 sub-Swiper 双页装配并逐轮 dump 验证。
+
+**仍需截图/像素源的场景**（如实缺口，勿偷用截图补验）：封面位图内容正确性（错图/花屏——解码计数不证内容）、帧率/掉帧（模拟器无数据）、动画中间态/过渡视觉、canvas 渲染文本（如阅读器页码，UI 树无该文本节点）。
+
+**实测基准（manbo 书架风暴参考）**：4887 本 / 32 轮 fling 下——`decode.active.peak=3`（闸门内）、`queue.peak=11`、`assembly.stale/fallback=0`、页与卡片零重建、CPU 中位 1.72%、PSS 中位 469.9MB 无泄漏、崩溃 0。产物落 `.tmp/<场景名>/`。
+
+## 8. 相关资源
 
 - arkxtest：github.com/openharmony/testfwk_arkxtest（JsUnit/UiTest/PerfTest + 中文使用指导）
 - 鸿蒙 HDC 命令合集：github.com/codematrixer/awesome-hdc
