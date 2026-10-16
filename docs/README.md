@@ -15,6 +15,7 @@
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
 | `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
 | `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
+| `ai-coding-workflow-openspec.md` | AI Coding 工作流参考：初始化三件套（Skills/MCP/AGENTS.md）、OpenSpec opsx 六命令与按阶段模型分级、提示词模板、giscus strict=SHA-1 机制与跨语言评论聚合 | 外部博客调研（Ruixe 2026-09）+ giscus 官方文档一手复核 | 2026-10-16 |
 
 另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
 
