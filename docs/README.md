@@ -13,6 +13,7 @@
 | `kimi-code-agent-tools-whitelist.md` | Kimi Code 子代理 tools 白名单（必须用 Kimi Code 工具名） | 通用 | 2026-10-15 |
 | `tag-based-release-workflow.md` | tag 唯一版本源：打 tag 之后的开发与版本演进 | manbo-reader 实践 | 2026-10-15 |
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
+| `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
 
 另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
 
