@@ -100,6 +100,8 @@ Jules：任务先产出可审批的 plan，"You can review and approve it before
 4. **并行条件显式化**：把 §3 的读写分离条款写明（只读可并行；写须互不相交文件且无隐性耦合；单一写者收口）。
 5. **控制面进代码**（远期）：IndyDevDan 的 "context transfers in code" 是脚本化编排（typed 中间产物 + 代码控制流）的理论地基；已有多代理工作流平台的场景下即"编排脚本持有顺序/重试/验收，子代理只做限界节点"。
 
+> 以上五条已于同日（2026-10-17）落为全局 AGENTS.md 规则（本仓库「子代理委派」节），规则以 AGENTS.md 为准，本节保留调研依据。
+
 ## 7. 参考链接
 
 - Anthropic：[Claude Code Best Practices](https://code.claude.com/docs/en/best-practices) ｜ [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents) ｜ [Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) ｜ [Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
