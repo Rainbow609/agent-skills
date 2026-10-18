@@ -30,7 +30,8 @@ if command -v apm >/dev/null; then
   # 🌟 apm 会把包内 hooks/ 目录当「可执行原语」自动集成进 claude/codex 配置——与本题分工冲突
   #    （Claude hooks 归 skillshare、codex/cmux hooks 由工具自管仅存档）。个人级 deny 一次，
   #    覆盖 hooks/mcp/bin/canvas/lsp（写 ~/.apm/config.json，幂等，deny 恒胜）。
-  apm deny --user Rainbow609/agent-skills >/dev/null 2>&1 || warn "apm deny 未生效，hooks 可能被 apm 重复注入（检查 ~/.apm/config.json）"
+  #    🌟 apm deny 即使 --user 也要求 CWD 存在 apm.yml（否则 exit 1 静默假失败）——须 cd 仓库根执行。
+  (cd "$REPO_DIR" && apm deny --user Rainbow609/agent-skills >/dev/null 2>&1) || warn "apm deny 未生效，hooks 可能被 apm 重复注入（检查 ~/.apm/config.json）"
   if apm install -g; then
     log "apm 安装完成（lock: ~/.apm/apm.lock.yaml）"
   else
