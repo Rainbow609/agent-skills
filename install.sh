@@ -67,6 +67,9 @@ mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 # ④ MCP 配置：均无密钥。
 #    ZCode 侧：skillshare 的 MCP 客户端列表不含 zcode，无法接管，由本脚本 jq 按 server 合并
 #    （保留 config.json 里的其他 server 与设置；不存在时以模板生成）。
+#    🌟 合并用 jq 的 `*`（递归深合并）而非 `+`（浅合并，同名键整体替换）：同名 server 的
+#    env 必须逐键合并——模板键优先、本机独有键保留。曾用 `+` 导致 deveco-codegenie 的
+#    UI_VERIFY_*（verify_ui 的模型三件套）每跑一次 install.sh 就被抹掉一次。
 #    Claude 侧：skillshare 接管——仓库定义导入 Skillshare 源后 sync 进 ~/.claude.json
 #    （Claude Code 唯一的用户级 MCP 路径；旧脚本写过的 ~/.claude/mcp.json 并非 Claude 读取路径）。
 #    skillshare 缺失时回退为 jq 直接合并进 ~/.claude.json。
@@ -74,7 +77,7 @@ ZCODE_CONFIG="$HOME/.zcode/cli/config.json"
 if [ -f "$ZCODE_CONFIG" ]; then
   cp "$ZCODE_CONFIG" "$ZCODE_CONFIG.bak-$ts"
   if jq --slurpfile mcp "$REPO_DIR/mcp/zcode-mcp.json" \
-      '.mcp.servers = ((.mcp.servers // {}) + $mcp[0].servers)' \
+      '.mcp.servers = ((.mcp.servers // {}) * $mcp[0].servers)' \
       "$ZCODE_CONFIG" > "$ZCODE_CONFIG.new" && [ -s "$ZCODE_CONFIG.new" ]; then
     mv "$ZCODE_CONFIG.new" "$ZCODE_CONFIG"
     log "MCP 已合并进 ${ZCODE_CONFIG}（备份 .bak-${ts}）"
