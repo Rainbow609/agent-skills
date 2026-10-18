@@ -30,6 +30,7 @@
 - 源端接续后是否退出，由 want 里的 `SUPPORT_CONTINUE_SOURCE_EXIT_KEY` 控制；长内容/阅读类官方建议源端退出（涉听书可仅暂停）。
 - 🌟 **快速启动目标应用**：`continueType` 值加 `_ContinueQuickStart` 后缀（如 `EntryAbility_ContinueQuickStart`）＝用户发起接续后对端**立即拉起**（默认要等数据传完才拉起）。代价是对端收到**两次启动**：先 `PREPARE_CONTINUATION`（冷启动走 onCreate、热启动走 onNewWant），数据就绪后再来一次 `CONTINUATION`（onNewWant）——业务分支只认 CONTINUATION，勿在 PREPARE 阶段做恢复。
 - 按需页面栈：`wantParam[SUPPORT_CONTINUE_PAGE_STACK_KEY]`（原样 key `ohos.extra.param.key.supportContinuePageStack`）设 false 可关掉系统页面栈恢复（**默认恢复**），改在 `onWindowStageRestore` 里 `loadContent` 指定落地页——navigation 应用即走此路（见上行 router 限制）。
+- 🌟 **每次接续投递的 `restoreWindowStage` 都销毁重建 windowStage 内容**：`onCreate` 与 `onNewWant` 的 CONTINUATION 分支各调一次，入口页整体重建（`aboutToAppear` 重跑、`@Watch` 重挂、实例字段归零）。配合 `_ContinueQuickStart` 双次拉起＝**恢复入口被触发两次、且第二链出生在新页面实例上**——恢复链的去重/一次性守卫状态必须**进程级静态持有**（纯函数静态类即可，可 LocalUnit 直测），放页面实例字段必失效。实测症状（2026-10-18 双真机）：第二链 `gap=-1ms`、双 open、双阅读器叠栈、被顶掉实例引擎落本地旧进度并连发迟到写回。
 
 ## 4. 🌟 进度接续三场景配方（全文精读 `bpta-application-continue-progess`，2026-10-16）
 
@@ -72,6 +73,7 @@
 - 权限：**API 12 起免 `DISTRIBUTED_DATASYNC`**（大量旧文仍写「必须申请」，以官方某版本的变更为准）；API 11 及以前需声明 + 动态申请。
 - 🌟 **跨端迁移配置三档**（以概述 `bpta-continue-cast` 为准）：① 同应用异 Ability（同 Bundle，双端 Ability 名不同）＝`continueType` 双端一致；② 同开发者不同 BundleName＝`continueBundleName` + `continueType` **两字段都要**、双端一致（旧口径「仅需 continueBundleName」不完整，已修订）；③ 不同开发者（跨 APPID）＝再加 AGC「接续服务」申请，且 **AppID 配置顺序＝对端匹配顺序**（发起端把对端设备形态的 AppID 排最前，如移动端发起：TV＞PC＞移动）、**务必包含自己的 AppID**，审批通过后还需重新下载 Profile 打包。
 - `continueType` 规则：本应用内唯一；字母/数字/下划线、≤127 字节、不支持中文；字符串数组**仅第一个生效**（配多个是白配）。
+- 🌟 **恢复数据的消费语义（谁清一次性数据、判重命中清不清键）不要按静态推演改动**：双投递 × 页面重建的真实系统时序下，code-review 推演出的「更安全」修正可能实测反而破坏接续（真机反例：判重命中清键版正确、不清键版接续异常，2026-10-18 用户实测裁决后回退）。时序类并发行为一律双真机验证后再落地。
 - 官方「新闻阅读」垂类（电子书/听书）建议：发起页 = 书籍首页/阅读页，同步阅读与听书进度。
 
 ## 6. 调试配方
@@ -87,6 +89,7 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 
 - `aa` **没有** `continue` 子命令；网传 `hdc emulator start` / `aa continue` 均为杜撰，勿照抄（已对官方命令表核否）。
 - 失败排查：DistributedSchedule 错误码 `16300501`（系统服务异常），常见根因是软总线套接字权限。
+- 🌟 **恢复链三点日志二分**（「恢复到旧位置」一次定位源端旧还是对端旧）：源端阅读器发布（publish）/ 源端 `onContinue`（migrate）/ 对端打开（open）三条日志统一自定义 tag（如 `Continuation`），两台真机各拉一次快照即可对拍页码；`hilog -x` 是快照式拉取，比长驻日志流抗断连（无线调试易掉）。两台设备在同一局域网时 `hdc -t <ip:port> shell "hilog -x" | grep Continuation`。
 
 ## 7. 存疑（引用前复核，勿当定论）
 
