@@ -30,7 +30,7 @@
 - 源端接续后是否退出，由 want 里的 `SUPPORT_CONTINUE_SOURCE_EXIT_KEY` 控制；长内容/阅读类官方建议源端退出（涉听书可仅暂停）。
 - 🌟 **快速启动目标应用**：`continueType` 值加 `_ContinueQuickStart` 后缀（如 `EntryAbility_ContinueQuickStart`）＝用户发起接续后对端**立即拉起**（默认要等数据传完才拉起）。代价是对端收到**两次启动**：先 `PREPARE_CONTINUATION`（冷启动走 onCreate、热启动走 onNewWant），数据就绪后再来一次 `CONTINUATION`（onNewWant）——业务分支只认 CONTINUATION，勿在 PREPARE 阶段做恢复。
 - 按需页面栈：`wantParam[SUPPORT_CONTINUE_PAGE_STACK_KEY]`（原样 key `ohos.extra.param.key.supportContinuePageStack`）设 false 可关掉系统页面栈恢复（**默认恢复**），改在 `onWindowStageRestore` 里 `loadContent` 指定落地页——navigation 应用即走此路（见上行 router 限制）。
-- 🌟 **每次接续投递的 `restoreWindowStage` 都销毁重建 windowStage 内容**：`onCreate` 与 `onNewWant` 的 CONTINUATION 分支各调一次，入口页整体重建（`aboutToAppear` 重跑、`@Watch` 重挂、实例字段归零）。配合 `_ContinueQuickStart` 双次拉起＝**恢复入口被触发两次、且第二链出生在新页面实例上**——恢复链的去重/一次性守卫状态必须**进程级静态持有**（纯函数静态类即可，可 LocalUnit 直测），放页面实例字段必失效。实测症状（2026-10-18 双真机）：第二链 `gap=-1ms`、双 open、双阅读器叠栈、被顶掉实例引擎落本地旧进度并连发迟到写回。
+- 🌟 **迁移启动的 `restoreWindowStage` 会销毁重建 windowStage 内容**：迁移启动（冷/热）都靠它触发页面恢复（官方：需在 `onCreate()/onNewWant()` 执行完成前调用，见上条）；「入口页整体重建（`aboutToAppear` 重跑、`@Watch` 重挂、实例字段归零）」官方未明文，为双真机实测。于是**单次 CONTINUATION 投递内即可产生两条恢复链**：热启动 `onNewWant` 写恢复数据+置触发标志（旧实例 `@Watch` 链）→ 同步 `restoreWindowStage`（销毁旧实例 → 新实例 `aboutToAppear` 读标志链）——两链并发各开一次页面（双开实测 2026-10-18，项目未配 `_ContinueQuickStart` 亦复现）。恢复链的去重/一次性守卫状态必须**进程级静态持有**（纯函数静态类即可，可 LocalUnit 直测），放页面实例字段必失效（症状签名：第二链实例字段全 0、双 open、双页面叠栈）。配置 `_ContinueQuickStart`（见上条）后系统再叠加 PREPARE_CONTINUATION+CONTINUATION 双请求，恢复入口触发次数更多，静态化更显必要。
 
 ## 4. 🌟 进度接续三场景配方（全文精读 `bpta-application-continue-progess`，2026-10-16）
 
