@@ -4,7 +4,10 @@
 > `/inference/go/...` 族）接给**只能配 BASE_URL / API_KEY / MODEL 三件套、不能配自定义请求头**的
 > 本地工具（MCP server、原生二进制、闭源 CLI 等）。
 > 本文为 2026-10-16 实测：curl 实打 + `codegenie-mcp-server`（Mach-O）strings 分析 + 官方
-> `docs/go` 页口径，非训练记忆。网关行为可能变化，引用前先跑一遍「判定流程」。
+> `docs/go` 页口径，非训练记忆。**2026-10-18 增补**：接入后仍会踩的两个代理自身缺陷
+> （content-encoding 透传 / DeepSeek thinking 回传）与 Go 档模型协议面速查，见「接入后仍会踩
+> 的两个坑」节；同日 install.sh 覆盖坑已根治（PR #25）。网关行为可能变化，引用前先跑一遍
+> 「判定流程」。
 
 ## 现象
 
@@ -128,6 +131,57 @@ rm ~/.local/bin/opencode-session-proxy.js ~/Library/LaunchAgents/com.rainbow.ope
 BASE_URL = http://127.0.0.1:8787/v1    # 工具自己拼上 /chat/completions
 ```
 
+## 接入后仍会踩的两个坑（2026-10-18 实测修复）
+
+会话头注入只是第一关；代理本身还有两个会让「看起来配好了」的链路继续失败的缺陷。
+
+### 坑 1：代理透传 `content-encoding` → 客户端解压必败
+
+- **现象**：verify_ui 报 `Internal error: terminated`，约 5 秒即失败；而 JS 侧超时是 120s、重试 3 次
+  （`nf = 3, rf = 2*60*1e3`），根本没轮到——说明是连接级错误，不是超时。
+- **根因**：代理用 node 内置 fetch 转发时，fetch 会**自动解压**上游 body（brotli/gzip），但
+  `upstream.headers` 仍保留 `content-encoding: br`；代理把该头透传给客户端后，客户端（undici fetch）
+  按 br 去解压已经明文的 body → 失败并抛 `terminated`。
+- **迷惑点**：`curl` 不校验该头，手测会「假通过」。要复现必须用 node fetch 或 `curl --compressed`。
+- **修复**：代理的 hop-by-hop 头集合里加入 `content-encoding`（发出去的 body 已是解压后明文）：
+
+```js
+const HOP_BY_HOP = new Set(["host", "connection", "content-length",
+  "transfer-encoding", "keep-alive", "upgrade", "content-encoding"]);
+```
+
+### 坑 2：DeepSeek 类模型的 thinking 模式要求回传 `reasoning_content`
+
+- **现象**：`400 invalid_request_error: The 'reasoning_content' in the thinking mode must be passed
+  back to the API.`（官方 FAQ `faqs-codegenie-3` 记录过同款）。
+- **根因**：`deepseek-v4.1-flash`（以及 qwen3.8、kimi-k3、mimo-v2.6 等）默认开启 thinking；多轮工具
+  循环里客户端只回传 assistant 的 `content`、不回传 `reasoning_content`，被上游拒收。
+- **修复**（代理按模型名注入，关闭思考）：
+
+```js
+// 请求体为 JSON 且 model 含 "deepseek" 时
+j.thinking = { type: "disabled" };   // 实测有效；"reasoning_effort": "none" 等效
+```
+
+- **实测无效的形式**：`enable_thinking`、`chat_template_kwargs.thinking`、`thinking_budget`
+  （均被忽略，reasoning_content 照出）。
+- **备选**：换不支持 thinking 的模型——但 Go 档里走 chat/completions 协议、支持视觉的模型
+  **全部默认 thinking**，所以「注入关闭」是唯一干净解。
+
+## 附：Go 档模型协议面速查（2026-10-18 实测）
+
+| 情况 | 模型 |
+| --- | --- |
+| chat/completions + 视觉可用（默认 thinking，需代理关） | `deepseek-v4.1-flash`、`qwen3.8-flash`、`qwen3.8-max`、`glm-5.3-flash`、`kimi-k3`、`mimo-v2.6-flash` |
+| 报 `ModelProtocolUnsupported`（走 responses / anthropic messages 协议） | `claude-haiku-5-5`、`gpt-6-luna`、`grok-4.7` 等 |
+| 报 `Model is unavailable` | `gemini-4-argon`、`mistral-large-4` |
+| 不支持图像输入 | `glm-5.3`（非 flash，400 明确拒绝） |
+| 禁止第三方调用（`FreeTierError`，仅限 OpenCode 客户端内） | 全部 `*-free` |
+
+另两点：**付费用量线**（`/inference/openai/v1`，需 Console credits）与 **Go 订阅线**
+（`/inference/go/...`、`/zen/go/...`，需 `x-opencode-session`）是两条独立计费，订阅在手不等于
+credits 可用；Cloudflare 会按 UA 拦截（错误码 1010），python-urllib 默认 UA 必被挡，脚本里要显式带 `User-Agent`。
+
 ## 实战案例：@deveco-codegenie/mcp 的 verify_ui
 
 `~/.zcode/cli/config.json` → `mcp.servers.deveco-codegenie.env`：
@@ -138,9 +192,10 @@ BASE_URL = http://127.0.0.1:8787/v1    # 工具自己拼上 /chat/completions
 | `UI_VERIFY_API_KEY` | opencode Go 的 key | 🌟 密钥只落本机 config.json，不入任何仓库 |
 | `UI_VERIFY_MODEL_NAME` | `deepseek-v4.1-flash` | 视觉判定类任务优先带视觉的模型 |
 
-🌟 **install.sh 覆盖坑**：agent-skills 的 `install.sh` 用 `mcp/zcode-mcp.json` 对 config.json 做
-按 server 合并——同名 server 条目**整体替换**（env 全量覆盖）。重跑 install.sh 后必须把
-`UI_VERIFY_*` 三个变量补回 config.json，否则 verify_ui 退回「环境变量未设置」报错。
+🌟 **install.sh 覆盖坑（2026-10-18 已根治，PR #25）**：旧版 `install.sh` 用 jq 的 `+`（浅合并）
+合并 `mcp/zcode-mcp.json`，同名 server 条目**整体替换**——`UI_VERIFY_*` 与 `type`/`timeoutMs` 每跑一次
+install.sh 就被抹掉，verify_ui 退回「环境变量未设置」。现已改为 jq 的 `*`（递归深合并：模板键优先、
+本机独有键保留）。**若回退到旧版 install.sh，重跑后仍须手动补回 `UI_VERIFY_*` 三键**。
 
 🌟 改 env 后必须重启会话（MCP server 进程随会话拉起，不热加载）。
 

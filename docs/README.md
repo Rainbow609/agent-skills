@@ -21,8 +21,8 @@
 | `openspec-matt-skills-combination.md` | OpenSpec × Matt Skills 结合实践：官方互不集成、社群代表方案（#285 dexhunter：OpenSpec 权威计划层＋grill 前置澄清＋不养双真源）、正交性分析、三种结合模式、五项冲突面裁决、manbo 落地示例 | Discussion #285 一手 + 两篇精读文档分析（2026-10-16） | 2026-10-16 |
 | `agent-orchestrator-planner-patterns.md` | AI 编码代理「主会话=规划者」编排模式：规划者四职责框架、六家官方一手对比（Anthropic/Codex/Copilot/Cursor/Cognition/Google）、多代理 vs 单线程分歧裁决（读写分离条款）、社区专家配方四家（Harper Reed/IndyDevDan/Ralph/Matt Pocock）、反模式八条、本机体系覆盖度与五条增量 | 六家官方文档/工程博客 + 社区作者一手文章（2026-10-17 两轮并行子代理调研） | 2026-10-17 |
 | `harmonyos-image-moire.md` | 图像抗摩尔纹（anti-moiré / descreen）：三类摩尔纹的区分与判据、「缩放比例决定条纹」核心机制、空间域/频域/选择性掩膜/AI 四类方案盘点（含「AI 无端侧生态」判定）、HarmonyOS 三通道可行性与工程配方 | manbo-reader 调研 + GitHub 实访 + 本机 SDK 实查（2026-10-16 二次核验 + 三次跨模型复核） | 2026-10-16 |
-
-另有 `opencode-zen-gateway-session-header.md`（opencode Go 会话头与本地注入代理）在 PR #5 中待合并，合入时补入本表。
+| `opencode-zen-gateway-session-header.md` | opencode Go 网关强制会话头与本地注入代理（含 content-encoding 透传、DeepSeek thinking 回传两个后续坑、Go 档模型协议面速查） | 实测（ZCode + verify_ui 端到端） | 2026-10-16（10-18 增补） |
+| `deveco-codegenie-mcp-guard.md` | deveco-codegenie MCP 的 tools/list 并发丢包缺陷：根因、可复用排查手法、透明 guard 代理全文与并发验收 | manbo-reader 会话实测（8/12 并发对照） | 2026-10-18 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 
