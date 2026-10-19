@@ -76,3 +76,17 @@ POST /api/v2/memory/add
 - 🌟 **Ollama 卡死诊断配方**（实测归纳）：驻留模型的小补全连续超时＋进程 CPU 0%＝runner 卡死/请求队列堵死，与负载无关——重启 Ollama 即恢复。
 - 16GB 上双大模型互挤（4.7GB embedding＋2.5GB chat）＝换装风暴主因；思考模式是 4B 抽取慢的主嫌疑（推演：`ollama show --template` 含 thinking 分支，未逐 prompt 复测）。
 - Ollama 服务另一消费者共存（如 opencode 自动探测）时排队放大；无显式 `OLLAMA_NUM_PARALLEL` 时 16GB 默认并行度极低（推演）。
+
+## 迁移原因：为什么 EverOS 成为唯一记忆通道（2026-10-18 定案，10-19 复测加固）
+
+决策时间线：2026-10-18 个人记忆库（113 条）无损迁入 EverOS、Memorix 停写、双写废除；2026-10-19 zcode 内置记忆（`~/.zcode/cli/memories/` 自动记忆）由用户关闭——单写 EverOS 定版（全局 AGENTS.md「记忆（单写 EverOS）」节）。
+
+**前任系统实测缺陷（公平复测：同主题条目两侧确证存在后，同查询双系统对测）**：
+
+- 🌟 **Memorix 1.9.3 中文检索系统性失效**：中文查询 **6/6 零命中**——含精确标题子串「接续双开」「上色模型在线下载」（条目 #117/#113 确在库）；英文 token 2/2 命中（`restoreWindowStage`/`readSync`，考古精度好）。根因推演＝CJK 无有效分词、标题疑似未单独入索引（官方源码未读——存疑）。fast＝balanced：未配置 embedding，文档宣称的向量检索从未生效。
+- **zcode 内置记忆**：MEMORY.md 索引超限截断（27.3KB > 24.4KB 上限，条目过长仅部分加载——harness 实测告警）；平台绑定仅服务 zcode。
+- Memorix 时延恒 ≈1s/次（CLI 进程启动主导，112 条小库亦快不起来）。
+
+**EverOS 换来的能力**：中文语义检索正常（改述命中、MCP 相关度 0.62 过 0.6 校准线）；hybrid 亚秒级（0.13-0.29s，Go 订阅线 decider 偶有秒级波动）；跨项目 `user_id` 作用域与 everos-memory MCP 身份注入；episode→case→skill 蒸馏管线（轨迹复用）。
+
+** Memorix 终态定位**＝英文术语考古的冻结档案：不写、不删、不迁（其 112 条观察与 EverOS 语料是同主题的不同表示，无单点真源冲突）。检索顺序四轨见本目录 README「与其它记忆层的关系」。
