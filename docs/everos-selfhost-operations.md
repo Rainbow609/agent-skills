@@ -83,7 +83,8 @@ POST /api/v2/memory/add
 
 **前任系统实测缺陷（公平复测：同主题条目两侧确证存在后，同查询双系统对测）**：
 
-- 🌟 **Memorix 1.9.3 中文检索系统性失效**：中文查询 **6/6 零命中**——含精确标题子串「接续双开」「上色模型在线下载」（条目 #117/#113 确在库）；英文 token 2/2 命中（`restoreWindowStage`/`readSync`，考古精度好）。根因推演＝CJK 无有效分词、标题疑似未单独入索引（官方源码未读——存疑）。fast＝balanced：未配置 embedding，文档宣称的向量检索从未生效。
+- 🌟 **Memorix 1.9.3 中文检索系统性失效**：中文查询 **6/6 零命中**——含精确标题子串「接续双开」「上色模型在线下载」（条目 #117/#113 确在库）；英文 token 2/2 命中（`restoreWindowStage`/`readSync`，考古精度好）。根因已源码实锤（dist/index.js `tokenize()` 10966 行）：**只按空白切分，无空格中文连续串＝整串单 token**，查询 token 须与文档 token 精确相等才命中；bundle 内 `NON_CJK_HYBRID_SIMILARITY` 常量印证 CJK 走独立的旧相似度路径。fast＝balanced：未配置 embedding，文档宣称的向量检索从未生效。
+- 🌟 **装 embedding 也救不了中文（有界实验实锤，2026-10-19）**：配 SiliconFlow Qwen3-Embedding-8B（TOML 键＝`[embedding] provider="api"`——合法值仅 api/fastembed/transformers/auto，provider="off" 为官方脚手架默认禁用值；doctor 报 4096d ready）后：新写入且写入时已算好向量的测试条目，中文唯一关键词仍 0 命中、英文 token 立即命中。原因链＝启动水合 `allowNetworkProbe:false` 只附磁盘缓存（语料向量仅在写入时产生）＋CJK 查询走旧相似度路径绕过向量道。**结论：Memorix 中文检索不可修，放弃救治是正解。**
 - **zcode 内置记忆**：MEMORY.md 索引超限截断（27.3KB > 24.4KB 上限，条目过长仅部分加载——harness 实测告警）；平台绑定仅服务 zcode。
 - Memorix 时延恒 ≈1s/次（CLI 进程启动主导，112 条小库亦快不起来）。
 
