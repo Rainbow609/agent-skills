@@ -30,7 +30,8 @@ if command -v apm >/dev/null; then
   # 🌟 apm 会把包内 hooks/ 目录当「可执行原语」自动集成进 claude/codex 配置——与本题分工冲突
   #    （Claude hooks 归 skillshare、codex/cmux hooks 由工具自管仅存档）。个人级 deny 一次，
   #    覆盖 hooks/mcp/bin/canvas/lsp（写 ~/.apm/config.json，幂等，deny 恒胜）。
-  apm deny --user Rainbow609/agent-skills >/dev/null 2>&1 || warn "apm deny 未生效，hooks 可能被 apm 重复注入（检查 ~/.apm/config.json）"
+  #    🌟 apm deny 即使 --user 也要求 CWD 存在 apm.yml（否则 exit 1 静默假失败）——须 cd 仓库根执行。
+  (cd "$REPO_DIR" && apm deny --user Rainbow609/agent-skills >/dev/null 2>&1) || warn "apm deny 未生效，hooks 可能被 apm 重复注入（检查 ~/.apm/config.json）"
   if apm install -g; then
     log "apm 安装完成（lock: ~/.apm/apm.lock.yaml）"
   else
@@ -56,13 +57,21 @@ for d in "$REPO_DIR"/skills/*/; do
   rsync -a --delete "${d%/}/" "$CANONICAL/$name/"
 done
 
-# ③ 智能体定义 → 双落（两目录各自格式，覆盖同名文件、不动其他文件）。
+# ③ 智能体定义 → 三落（各目录各自格式，覆盖同名文件、不动其他文件）。
 zcode_agents=("$REPO_DIR"/agents/zcode/*.md)
 universal_agents=("$REPO_DIR"/agents/universal/*.agent.md)
 log "落智能体定义：ZCode 版 -> ${AGENTS_ZCODE}，universal 版 -> ${AGENTS_UNIVERSAL}"
 mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 ((${#zcode_agents[@]})) && cp "${zcode_agents[@]}" "$AGENTS_ZCODE/"
 ((${#universal_agents[@]})) && cp "${universal_agents[@]}" "$AGENTS_UNIVERSAL/"
+# opencode 版：universal 正文 + opencode 专属 frontmatter（mode: subagent；只读代理 permission deny
+# edit/write——tools 数组在 opencode 1.18 会令配置校验直接报错）。手改 universal 正文后需同步转换本目录。
+if [ -d "$HOME/.config/opencode" ]; then
+  opencode_agents=("$REPO_DIR"/agents/opencode/*.md)
+  log "落智能体定义：opencode 版 -> ${HOME}/.config/opencode/agents"
+  mkdir -p "$HOME/.config/opencode/agents"
+  ((${#opencode_agents[@]})) && cp "${opencode_agents[@]}" "$HOME/.config/opencode/agents/"
+fi
 
 # ④ MCP 配置：均无密钥。
 #    ZCode 侧：skillshare 的 MCP 客户端列表不含 zcode，无法接管，由本脚本 jq 按 server 合并
@@ -73,6 +82,8 @@ mkdir -p "$AGENTS_ZCODE" "$AGENTS_UNIVERSAL"
 #    Claude 侧：skillshare 接管——仓库定义导入 Skillshare 源后 sync 进 ~/.claude.json
 #    （Claude Code 唯一的用户级 MCP 路径；旧脚本写过的 ~/.claude/mcp.json 并非 Claude 读取路径）。
 #    skillshare 缺失时回退为 jq 直接合并进 ~/.claude.json。
+#    opencode 侧：skillshare 同样不接管，jq 合并进 ~/.config/opencode/opencode.json 并做格式转换
+#    （opencode 要求 command 为数组、env 键名为 environment、需补 type/enabled；保留 reeve 等本机已有 server）。
 ZCODE_CONFIG="$HOME/.zcode/cli/config.json"
 if [ -f "$ZCODE_CONFIG" ]; then
   cp "$ZCODE_CONFIG" "$ZCODE_CONFIG.bak-$ts"
@@ -124,6 +135,30 @@ if [ -d "$HOME/.claude" ]; then
   fi
 else
   warn "未找到 ~/.claude，Claude MCP 跳过"
+fi
+OPENCODE_CONFIG="$HOME/.config/opencode/opencode.json"
+if [ -d "$HOME/.config/opencode" ]; then
+  if [ -f "$OPENCODE_CONFIG" ]; then
+    cp "$OPENCODE_CONFIG" "$OPENCODE_CONFIG.bak-$ts"
+    # 🌟 同 ZCode 侧：用 jq `*` 深合并而非 `+`，同名 server 的本机独有 env 键才不会被抹掉。
+    if jq --slurpfile mcp "$REPO_DIR/mcp/zcode-mcp.json" \
+        '.mcp = ((.mcp // {}) * ($mcp[0].servers | to_entries | map({key: .key, value: {type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true}}) | from_entries))' \
+        "$OPENCODE_CONFIG" > "$OPENCODE_CONFIG.new" && [ -s "$OPENCODE_CONFIG.new" ]; then
+      mv "$OPENCODE_CONFIG.new" "$OPENCODE_CONFIG"
+      log "opencode MCP 已合并进 ${OPENCODE_CONFIG}（备份 .bak-${ts}）"
+    else
+      rm -f "$OPENCODE_CONFIG.new"
+      echo "错误：jq 合并失败，${OPENCODE_CONFIG} 未改动（原文件备份在 .bak-${ts}）" >&2
+      exit 1
+    fi
+  else
+    jq -n --slurpfile mcp "$REPO_DIR/mcp/zcode-mcp.json" \
+      '{mcp: ($mcp[0].servers | to_entries | map({key: .key, value: {type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true}}) | from_entries)}' \
+      > "$OPENCODE_CONFIG"
+    log "已按模板生成 ${OPENCODE_CONFIG}（新机首次配置）"
+  fi
+else
+  warn "未找到 ~/.config/opencode，opencode MCP 跳过"
 fi
 
 # ⑤ Claude 个人配置（hooks 接线 / 模型 / 权限等）：仓库为脱敏模板（不含任何 token）。
@@ -215,8 +250,8 @@ if [ -d "$HOME/.iflow" ]; then
   log "opsx 命令已落盘 ~/.iflow/commands/"
 fi
 
-# ⑨ 各 agent 的全局规则软链：Claude Code / Codex 复用 ~/.zcode/AGENTS.md 单一真源（幂等；真实文件先备份再替换）。
-for d in "$HOME/.claude" "$HOME/.codex"; do
+# ⑨ 各 agent 的全局规则软链：Claude Code / Codex / opencode 复用 ~/.zcode/AGENTS.md 单一真源（幂等；真实文件先备份再替换）。
+for d in "$HOME/.claude" "$HOME/.codex" "$HOME/.config/opencode"; do
   if [ ! -d "$d" ]; then warn "未找到 ${d}，全局规则软链跳过"; continue; fi
   link="$d/AGENTS.md"
   if [ -L "$link" ]; then
