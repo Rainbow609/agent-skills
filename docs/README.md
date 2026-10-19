@@ -25,6 +25,7 @@
 | `deveco-codegenie-mcp-guard.md` | deveco-codegenie MCP 的 tools/list 并发丢包缺陷：根因、可复用排查手法、透明 guard 代理全文与并发验收 | manbo-reader 会话实测（8/12 并发对照） | 2026-10-18 |
 | `everos-selfhost-operations.md` | EverOS 1.4.2 自托管运维：进程管理（start-only／SIGTERM 挂起需 -9）、配置热加载边界、写路径 v2 契约实测、MCP 通道坑、检索方法矩阵与软依赖设计、官方模型实践（decider 静默 404 坑）、隐私上云阶梯、本地 Ollama vs 全上云性能账与卡死诊断配方、迁移原因（Memorix 中文检索失效公平复测 6/6 零命中） | 实测（本机 M4/16GB 全链计时）＋ everos 1.4.2 包源码明文 | 2026-10-19 |
 | `opencode-config-sync-gotchas.md` | opencode 1.18 接入同步链：技能零管道（原生读 ~/.agents/skills）、agents tools 数组非法＝配置校验整体报错、MCP 本地格式转换、全局 AGENTS.md 路径、git track／apm deny CWD 两坑 | 实测（opencode 1.18.15）＋官方文档明文 | 2026-10-19 |
+| `openspec-agents-ecosystem-survey.md` | OpenSpec 增强与并行代理生态三线调研：openspec-plus 抄机制清单（不整体安装）、并行编排器共识（读写分离印证）与 4 个可借鉴机制（tasks.md 三路合并/冲突分波/Track 分区/热点串行）、openspec-agents 深读与 ZCode 安装使用配方（本机已装 0.149.1：门禁机制、clarify HARD-GATE、MCP 冒烟方法、旧会话不热刷新坑、无人值守与 Java 口味局限） | 两仓库源码/全文直读 + 十仓库 README/关键源文件 + 本机安装实测（2026-10-19） | 2026-10-19 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 
