@@ -23,18 +23,20 @@
 | `harmonyos-image-moire.md` | 图像抗摩尔纹（anti-moiré / descreen）：三类摩尔纹的区分与判据、「缩放比例决定条纹」核心机制、空间域/频域/选择性掩膜/AI 四类方案盘点（含「AI 无端侧生态」判定）、HarmonyOS 三通道可行性与工程配方 | manbo-reader 调研 + GitHub 实访 + 本机 SDK 实查（2026-10-16 二次核验 + 三次跨模型复核） | 2026-10-16 |
 | `opencode-zen-gateway-session-header.md` | opencode Go 网关强制会话头与本地注入代理（含 content-encoding 透传、DeepSeek thinking 回传两个后续坑、Go 档模型协议面速查） | 实测（ZCode + verify_ui 端到端） | 2026-10-16（10-18 增补） |
 | `deveco-codegenie-mcp-guard.md` | deveco-codegenie MCP 的 tools/list 并发丢包缺陷：根因、可复用排查手法、透明 guard 代理全文与并发验收 | manbo-reader 会话实测（8/12 并发对照） | 2026-10-18 |
+| `everos-selfhost-operations.md` | EverOS 1.4.2 自托管运维：进程管理（start-only／SIGTERM 挂起需 -9）、配置热加载边界、写路径 v2 契约实测、MCP 通道坑、检索方法矩阵与软依赖设计、官方模型实践（decider 静默 404 坑）、隐私上云阶梯、本地 Ollama vs 全上云性能账与卡死诊断配方 | 实测（本机 M4/16GB 全链计时）＋ everos 1.4.2 包源码明文 | 2026-10-19 |
+| `opencode-config-sync-gotchas.md` | opencode 1.18 接入同步链：技能零管道（原生读 ~/.agents/skills）、agents tools 数组非法＝配置校验整体报错、MCP 本地格式转换、全局 AGENTS.md 路径、git track／apm deny CWD 两坑 | 实测（opencode 1.18.15）＋官方文档明文 | 2026-10-19 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 
 1. **单一真源（防偏移）**：可跨项目复用的结论以本目录为准；项目侧只留**指针 + 项目特化细节**，不复制全文。发现两处措辞不一致时，以本目录（最近一次经一手复核的版本）为准，并回改项目侧。
 2. **同步即复核（防毒化）**：入仓前必须回到一手来源核对（官方文档原文 / 实测输出 / 官方工具源码），文头注明适用前提与复核时间；二手转述与未证实内容一律显式标注「存疑」，并写明试过哪些检索。
 3. **清单化（防遗漏）**：本表为 `docs/` 全量索引，新增 / 删除 / 改名文档必须同 PR 更新；每条注明来源与入库日期。
-4. **落地流程**：`<type>/<描述>` 功能分支 + PR（不直推 main）；纯文档变更。条款与仓库 `AGENTS.md`「记忆（双库同步）」第 3 条配套。
+4. **落地流程**：`<type>/<描述>` 功能分支 + PR（不直推 main）；纯文档变更。条款与仓库 `AGENTS.md`「记忆」节第 3 条（跨项目知识入库）配套。
 
 ## 与其它记忆层的关系
 
-- **Memorix MCP**：本机跨会话语义检索层（坑点 / 决策 / 配方，项目作用域）；
+- **EverOS（自托管 127.0.0.1:8000）**：跨会话/跨项目记忆**唯一写入通道**（everos-memory MCP；运维与契约配方见 `everos-selfhost-operations.md`）；
 - **各项目 `docs/`**：项目特化深度调研（带 `file:line` 证据）；
 - **本目录**：跨项目通用真源（本文件为索引）。
 
-检索顺序：Memorix → 项目 `docs/` → 本目录 → 自行调研（产物按同样顺序回写各层）。细则见仓库 `AGENTS.md` 与各项目 `AGENTS.md`。
+检索顺序：EverOS → 项目 `docs/` → 本目录 → 自行调研（产物按同样顺序回写各层）。细则见仓库 `AGENTS.md`「记忆（单写 EverOS）」节与各项目 `AGENTS.md`。（Memorix 与 zcode 内置记忆已弃用仅存档，2026-10-19 起。）
