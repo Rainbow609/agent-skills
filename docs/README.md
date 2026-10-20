@@ -30,6 +30,7 @@
 | `ai-subscription-quota-endpoints.md` | AI 订阅/套餐额度**查询接口**速查：四类数据来源分层（官方/半官方/社区逆向/本地日志）、14 家 endpoint 与字段、高峰时段可编码规则（含中国节假日例外与「已取消」标注）、**GCMP 作为上游的自动/半自动边界**（gcmp.dev 公开配置、tokenPricing 四形态坑、cron 峰谷边界、许可与节奏）、口径陷阱 | 三路并行调研（GitHub 项目 + 厂商文档）+ 官方文档一手复核 + GCMP 上游实测（2026-10-19） | 2026-10-19 |
 | `ruleset-distribution-cn.md` | 规则集/配置下发的国内可达方案：镜像与 CDN 可达性矩阵（含「未实测」标注）、jsDelivr 12h 缓存与限流假 200、Gitee/npmmirror 两条免备案通道、备案+境内 CDN 成本、客户端多源拉取顺序与八步校验降级 | 公开 issue/官方文档 + 本机实测（出口非大陆，已标注） | 2026-10-19 |
 | `harmonyos-immersive-light-widgets-webview.md` | 鸿蒙 Next 三件套：沉浸光感（官方术语 + uiMaterial/ImmersiveMaterial，API 26.0.0 起）、服务卡片硬限制（刷新配额/不能联网/尺寸与圆角规范/用多定点刷新做分钟级高峰切换）、ArkWeb 登录能力与审核 3.16 要求 | developer.huawei.com 设计文档 + OpenHarmony docs 原文精读 | 2026-10-19 |
+| `harmonyos-cli-debugging.md` | 鸿蒙 CLI 调试命令族速查：hdc/hilog/aa/bm/hidumper/hitrace/hiperf/devicedebug/hstack 全景、日常联调/崩溃取证/性能定界/CI 回归四场景配方、「官方无 CLI 调试白皮书，权威入口为调试命令文档组（总览页仅列六项）」结论、断点调试边界与 SPA 抓取技巧 | 官方 Debugging Commands 文档组 + OpenHarmony docs raw md 直读复核（devicedebug/lldb 两条承重结论） | 2026-10-20 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 
