@@ -83,7 +83,7 @@ apm install -g Rainbow609/agent-skills#v2026.10.14     # 用户级；或在项�
 - **技能目录是 APM 包视图**：`skills/` 下 81 个 symlink（指向 upstream/snapshot）由 `scripts/gen-apm-links.sh` 生成，勿手改；增删技能后重跑该脚本。APM 发现规则（实测 v0.33.0）：只认根 `skills/` 一层直接子目录、symlink 仅限包内、`.apm/skills` 在根 skills/ 存在时被忽略。
 - **clone 位置不限，勿写死路径**：install.sh 以 `$(dirname "${BASH_SOURCE[0]}")` 自定位仓库根，sync-upstream.sh 以 `git rev-parse --show-toplevel` 定位——这是 dotfiles 仓库的通行做法（self-locating bootstrap，参见 [holman/dotfiles](https://github.com/holman/dotfiles)）。新增脚本或文档时一律不要写死 clone 路径。
 - **技能落盘为独立拷贝**：`npx skills` 对本地源实测走 copy（非 symlink），改仓库后需重跑 `install.sh` 同步到全局库。
-- **MCP 模板含本机路径**：`/opt/homebrew/bin/...` 为 homebrew 二进制；`zcode-mcp.json` 的 `deveco-codegenie` command 指向**本机 guard 脚本**（`~/.local/bin/codegenie-mcp-guard`，防 codegenie 并发丢包，不入库，来历见 [docs/deveco-codegenie-mcp-guard.md](./docs/deveco-codegenie-mcp-guard.md)）——他机使用前请确认对应文件存在，或改回直连 `codegenie-mcp-server` / 自己环境下的命令路径。
+- **MCP 模板含本机路径**：`/opt/homebrew/bin/...` 为 homebrew 二进制——他机使用前请确认对应文件存在，或改用自己环境下的命令路径。`everos-memory` 例外：走 `uvx everos-mcp`，需本机 EverOS 服务（`127.0.0.1:8000`）与 `uv` 就绪，配方见 [docs/everos-selfhost-operations.md](./docs/everos-selfhost-operations.md)。
 - **`upstream/` 勿手改**：周更 PR 会整树覆盖。要魔改上游技能请 fork 源仓库改 `upstreams.json` 指向，或拷进 `skills/` 改名自管。
 - **周更 PR 复用同一分支**（`upstream-sync/weekly`）：上周未合并时本周推送自动更新该 PR，不会堆积。
 - **MCP 配置与 hooks 模板均无密钥**：MCP 全部指向 homebrew 二进制；hooks 的 claude-settings 模板已剔除 token（合并部署时本机凭据原样保留，新机需自行补）。若将来加带 token 的内容，用环境变量引用，**密钥绝不入库**。
