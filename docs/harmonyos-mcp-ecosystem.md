@@ -4,24 +4,24 @@
 > 本文所有版本号 / 下载量 / star 数 / 工具清单均为 2026-10-16 实测（npm registry、gh API、官方 README、
 > 本机 DevEco Studio 26 二进制与 stdio 握手），非训练记忆；华为工具链迭代快，引用前请复核「来源」。
 > 引用块内为官方文档**逐字原文**。
+> 2026-10-20 增补：官方 CLT 26.0.0.851 的 `Emulator`/`hdc` 路径与本机 PATH 配置已补入 §4.1。
 
 ## 核心结论
 
 1. **官方路线已 CLI 化**：华为 2026 HDC 发布 `@deveco/deveco-cli`（内置 ohpm / hvigor / hdc / emulator / hilog），
    MCP 只是它的一个子命令（`devecocli serve mcp`，15,099 下载/月）；社区曾最流行的第三方封装
    `deveco-toolbox`（146★）因此归档让位。
-2. **模拟器管理只有官方 `@deveco-codegenie/mcp` 一条现实路径，且必须点名 0.2.6 线**——
-   dist-tags 里 `stable`=1.1.11 是精简线（无模拟器工具组），`latest`=`beta`=0.2.6 才是功能全的线（15 工具）。
-3. **模拟器工具组要显式激活**：`ADDITIONAL_TOOL_GROUPS=emulator_manager,ui_integration_test`，
-   否则 `emulator_image_manager` / `emulator_instance_manager` / `verify_ui` 根本不出现在工具列表里。
-4. **社区生态在主流注册表里几乎是空白**：`punkpeye/awesome-mcp-servers` 与 `modelcontextprotocol/servers`
+2. **模拟器 / 设备自动化以 CLI 为准、不引入 MCP**：`devecocli`（内置 emulator / hdc / hilog）+ 官方 CLT 或
+   DevEco 自带的 `Emulator` 二进制 + 设备侧 `uitest` 即全流程可用（见 §4.1）。本机曾评估的 codegenie MCP 已于
+   2026-10-19 移除（修复方案经测试判定不可用），其工具组 / 环境变量 / 工具清单细节不再适用，勿再引用。
+3. **社区生态在主流注册表里几乎是空白**：`punkpeye/awesome-mcp-servers` 与 `modelcontextprotocol/servers`
    对 harmony/鸿蒙/ohos/arkts/deveco/hdc **全部零命中**；`mobile-next/mobile-mcp`（9.5k★）未支持鸿蒙
    （仅 2026-10-12 一条 open issue）。发现渠道实际是 npm + GitHub + 中文社区。
-5. **三个已废弃/陷阱不要碰**：PyPI `harmonyos-mcp`（2KB 空壳，与 npm 同名包无关）、`deveco-toolbox`（已 archived）、
+4. **三个已废弃/陷阱不要碰**：PyPI `harmonyos-mcp`（2KB 空壳，与 npm 同名包无关）、`deveco-toolbox`（已 archived）、
    `@midscene/harmony-mcp`（官方宣布退役，要 MCP 只能钉 1.9.8）。
-6. **兜底路径不依赖任何 MCP**：DevEco Studio 自带的 `Emulator` 二进制本身就是完整控制面
+5. **兜底路径不依赖任何 MCP**：官方 CLT 或 DevEco Studio 自带的 `Emulator` 二进制本身就是完整控制面
    （`-start/-stop/-instance` + `-screenshot/-uiLayout/-click/-slide/-fill`），配 `hdc` 与设备侧 `uitest`
-   即可全流程自动化；DevEco Studio 还自带 JetBrains MCP Server 插件（见 §4.2）。
+   即可全流程自动化；DevEco Studio 还自带 JetBrains MCP Server 插件（见 §4.1）。
 
 ## 一、官方件
 
@@ -38,53 +38,7 @@
   `@deveco/deveco-cli-openharmony-arm64`（供 OpenHarmony 设备侧运行）。
 - 主仓：gitcode.com/openharmony-sig/deveco-cli（官方 SIG 组织）。
 
-### 1.2 @deveco-codegenie/mcp —— 唯一带模拟器管理的 MCP
-
-CodeGenie 产线发布的 MCP server（**注意：无公开仓库、无 License 声明**，参数细节以实测 schema 为准）。
-
-**通道陷阱（本文最重要的一条）**：dist-tags 指向两条形态不同的线，工具面实测对比：
-
-| 通道 | 版本 | 发布 | 工具数 | 模拟器工具组 | knowledge_search / project_sync / hilog |
-| --- | --- | --- | --- | --- | --- |
-| `stable` | 1.1.11 | 2026-06-30 | 7（含 ui 校验组 10） | ❌ | ❌ |
-| `latest` = `beta` | 0.2.6 | 2026-06-02 | 10（含两组 15） | ✅ | ✅ |
-
-两边 README 同名同结构（registry 的 readme 字段只反映 latest），**只能靠实测工具列表区分**。
-安装必须点名版本：`npm i -g @deveco-codegenie/mcp@0.2.6`，不要写 `@stable`。
-
-**0.2.6 + 两个工具组实测的 15 个工具**：`emulator_image_manager`、`emulator_instance_manager`、
-`verify_ui`、`get_ui_verification_log`、`save_ui_screenshot`、`start_app`、`build_project`、
-`get_app_ui_tree`、`perform_ui_action`、`check_ets_files`、`check_cpp_files`、`init_project_path`、
-`harmonyos_knowledge_search`、`project_sync`、`get_hilog_or_faultlog_recent`。
-
-**两个模拟器工具的参数（实测 inputSchema）**：
-
-- `emulator_image_manager`（镜像管理）：`action` = `list` / `download` / `delete` / `acceptLicense`；
-  `os_version` 形如 `"HarmonyOS 6.0.1(21)"`（download/delete 必填）；可选 `device_type`、`downloaded`、`http_proxy`。
-- `emulator_instance_manager`（实例管理）：`action` = `create` / `start` / `stop` / `delete` / `list` /
-  `collectLogs` / `screenProfileList`；`create` 必填 `device_type`（phone、foldable、tablet、2in1、wearable、tv）
-  与 `os_version`，可选 `screen_profile`（如 `"Mate 70"`，先从 `screenProfileList` 查）、
-  `memory` 2–32GB、`storage` 2–1023GB；`name` 只允许字母/空格/数字/下划线；`collectLogs` 需 `log_base_path`。
-  注意 README 里写的工具名 `emulator_management` 是旧名，**真实工具名是 `emulator_instance_manager`**。
-
-**环境变量**：
-
-| 变量 | 说明 |
-| --- | --- |
-| `DEVECO_PATH` | DevEco Studio 安装根目录（macOS 示例 `/Applications/DevEco-Studio.app/Contents`），优先级最高，未设则自动扫描常见路径 |
-| `PROJECT_PATH` | 工程根路径；也可不设——服务会走 MCP `roots/list` 协议，或由 agent 调用 `init_project_path` 工具按项目设置 |
-| `ADDITIONAL_TOOL_GROUPS` | 显式激活额外工具组，如 `emulator_manager,ui_integration_test` |
-
-**`verify_ui` 的额外依赖**：自然语言 UI 校验需要视觉模型（需支持 Function Call），
-配 `UI_VERIFY_BASE_URL` / `UI_VERIFY_API_KEY` / `UI_VERIFY_MODEL_NAME` 才能用；
-官方说明其操作面目前仅点击/滑动/按键、基于截图判断。🌟 端点选 opencode Go 时的会话头墙
-（强制 `x-opencode-session`，原生二进制发不了自定义头）与本地注入代理配方见
-[opencode-zen-gateway-session-header.md](opencode-zen-gateway-session-header.md)。
-
-**`start_app` 的关键行为**：设备列表包含已安装但未运行的模拟器，选中会自动启动——不接管
-模拟器生命周期也能跑起应用。
-
-### 1.3 Hypium 设备测试 MCP —— 白皮书已挂清单，截至 2026-10-16 未公开分发
+### 1.2 Hypium 设备测试 MCP —— 白皮书已挂清单，截至 2026-10-16 未公开分发
 
 - 出处：鸿蒙生态测试白皮书「功能场景测试 → Hypium设备测试MCP工具」章节
   （`guidebook/hoetwp-capability-functiontest3-0000002594762528`，章节更新 2026-06-12），
@@ -95,8 +49,8 @@ CodeGenie 产线发布的 MCP server（**注意：无公开仓库、无 License 
   （open_notification_center/enter_recent_task/drag_to_xiaoyi）、observation（screenshot 仅 jpg/layout/
   find_elements）、plugins（start_data_collect/stop_data_collect/generate_report）、clipboard
   （write/read/clear_clipboard）、settings（set_view_mode）、shell（execute_shell_command/pull_file/push_file）。
-  🌟 双击/捏合/旋转/Toast/剪贴板/深浅色恰是 deveco-codegenie MCP 与 `devecocli ui` 都缺的能力——
-  两套 MCP 互补：codegenie = 模拟器生命周期 + verify_ui 自然语言验证；Hypium = 精细手势与设备状态操作。
+  🌟 捏合/旋转/Toast/剪贴板/深浅色是 `devecocli ui` 当前缺的能力（现有 layout/window/screenshot/click/
+  doubleclick/longclick/swipe/fling/drag/dircfling/text）——Hypium 补齐精细手势与设备状态操作。
 - 🌟 **获取现状（2026-10-16 实测）：未公开分发**。证据链：DevEco Testing Hypium 26.0.0.500 Release
   公共包（2026-08-29 发布，晚于白皮书章节更新）解剖三组件均无 MCP server——Python 框架 wheels 无
   server 模块、HypiumAssist PyCharm 插件 jar 无 mcp 类且不含工具名字符串、hypium-driver tgz 无 MCP 依赖；
@@ -148,37 +102,17 @@ glama.ai 收录最多（十余条）；smithery.ai 零结果；awesome 列表与
 
 ## 四、落地方式
 
-### 4.1 接入（本仓库已接 `mcp/zcode-mcp.json`）
+### 4.1 零依赖兜底：官方 CLT / DevEco 自带控制面
 
-```bash
-npm i -g @deveco-codegenie/mcp@0.2.6   # 必须点名 0.2.6；@stable 是精简线
-```
-
-```json
-"deveco-codegenie": {
-  "command": "/opt/homebrew/bin/codegenie-mcp-server",
-  "args": [],
-  "env": {
-    "DEVECO_PATH": "/Applications/DevEco-Studio.app/Contents",
-    "ADDITIONAL_TOOL_GROUPS": "emulator_manager,ui_integration_test"
-  }
-}
-```
-
-验证方法（免开 agent）：对 server 做 stdio 握手（`initialize` → `notifications/initialized` → `tools/list`），
-应列出 15 个工具；最小真实调用 `emulator_instance_manager {"action":"list"}` 应返回本机实例列表。
-`verify_ui` 需要额外视觉模型密钥（见 §1.2），密钥不入库。
-
-### 4.2 零依赖兜底：DevEco 自带控制面
-
-- **`Emulator` 二进制**（`Contents/tools/emulator/Emulator`）：`-start/-stop/-list/-create/-delete`（镜像）、
+- **`Emulator` 二进制**（官方 CLT：`~/Library/Huawei/command-line-tools/bin/Emulator`；
+  DevEco 内置：`/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`）：`-start/-stop/-list/-create/-delete`（镜像）、
   `-instance <name>` 下的 `-screenshot/-screenshotPath/-uiLayout/-click/-slide/-fill/-power/-volume/-rotation`、
   `-hdcPort/-hvd/-logZip`——模拟器启停、截图、UI 布局、点击滑动的原子命令全在。
-- **`hdc`**（`Contents/sdk/default/openharmony/toolchains/hdc`，默认不在 PATH）：装机、shell、hilog、文件传输。
+- **`hdc`**（官方 CLT：`~/Library/Huawei/command-line-tools/sdk/default/openharmony/toolchains/hdc`，本机已在 PATH；
+  DevEco 内置：`Contents/sdk/default/openharmony/toolchains/hdc`）：装机、shell、hilog、文件传输。
 - **设备侧 `uitest` / `aa`**：`screenCap -p`、`dumpLayout`、`uiInput click/inputText/...`、`aa start`，模拟器与真机通用。
 - **DevEco Studio 自带 JetBrains MCP Server 插件**（`Contents/plugins/mcpserver/lib/mcpserver.jar`，
-  插件 id `com.intellij.mcpServer`）：可把 IDE 的构建 / run 配置暴露给外部 agent；
-  CodeGenie 插件自身也是 MCP 客户端，可挂上述任一 MCP。
+  插件 id `com.intellij.mcpServer`）：可把 IDE 的构建 / run 配置暴露给外部 agent。
 - 已知模拟器坑：首次冷启动可能 >60s；只接受 debug 签名 HAP；`uitest dumpLayout` 会隐藏软键盘正下方节点；
   `hdc list targets` 状态列会把部分已连接设备误报 `Offline`，判定可用性别只信状态列。
 
@@ -187,9 +121,7 @@ npm i -g @deveco-codegenie/mcp@0.2.6   # 必须点名 0.2.6；@stable 是精简�
 | 内容 | 来源 |
 | --- | --- |
 | deveco-cli 包与 `serve mcp` / 前置要求 / lsp 与 mcp 二选一 | https://www.npmjs.com/package/@deveco/deveco-cli （包内 README）；https://gitcode.com/openharmony-sig/deveco-cli |
-| codegenie mcp 通道差异与工具清单 | https://registry.npmjs.org/@deveco-codegenie/mcp （dist-tags 与 README）；本机 stdio 握手 tools/list 实测（server `rmcp 0.12.0`，1.1.11 与 0.2.6 各跑一遍） |
-| 两个模拟器工具参数 | 实测 `tools/list` 返回的 inputSchema（0.2.6） |
-| npm 下载量与版本时间 | https://api.npmjs.org/downloads/point/last-month/...（@deveco/deveco-cli 15,099；@deveco-codegenie/mcp 476；agent-device 1,030,550） |
+| npm 下载量与版本时间 | https://api.npmjs.org/downloads/point/last-month/...（@deveco/deveco-cli 15,099；agent-device 1,030,550） |
 | 仓库 star / 活跃度 / 归档状态 | gh api repos/callstack/agent-device、Eilgnaw/harmonyos-mcp、open-deveco/deveco-toolbox、XixianLiang/HarmonyOS-mcp-server、AlexGladkov/claude-in-mobile、mobile-next/mobile-mcp、Deslord319/harmonyos-dev-mcp、web-infra-dev/midscene（2026-10-16） |
 | Midscene MCP 退役声明 | https://midscenejs.com/mcp |
 | 注册表收录情况 | punkpeye/awesome-mcp-servers 与 modelcontextprotocol/servers 的 README grep；mcp.so / smithery.ai / glama.ai 检索（2026-10-16） |

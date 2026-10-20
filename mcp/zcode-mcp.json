@@ -17,13 +17,16 @@
       "command": "/opt/homebrew/bin/context7-mcp",
       "args": []
     },
-    "deveco-codegenie": {
-      "command": "/Users/liangzongyou/.local/bin/codegenie-mcp-guard",
-      "args": [],
+    "everos-memory": {
+      "command": "uvx",
+      "args": [
+        "everos-mcp"
+      ],
       "env": {
-        "DEVECO_PATH": "/Applications/DevEco-Studio.app",
-        "ADDITIONAL_TOOL_GROUPS": "emulator_manager,ui_integration_test"
-      }
+        "EVEROS_BASE_URL": "http://127.0.0.1:8000",
+        "EVEROS_USER_ID": "manbo-reader"
+      },
+      "timeoutMs": 180000
     }
   }
 }

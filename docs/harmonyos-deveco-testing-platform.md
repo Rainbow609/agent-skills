@@ -3,7 +3,8 @@
 > 适用前提：回答「DevEco Testing 平台能做什么、怎么用命令行跑性能/稳定性/预检测试、
 > 自定义性能脚本（hypium-perf）怎么写」。安装与环境配置见 `harmonyos-deveco-testing-hypium-setup.md`。
 > 核实自官方知识库《命令行执行测试》《性能测试》《自定义性能脚本测试（基于Python）》
-> 《HarmonyOS 开发者测试服务概述》（devecocli docs，2026-10-16），并经本机原型实测。
+> 《HarmonyOS 开发者测试服务概述》（devecocli docs，2026-10-16；命令行章节 2026-10-20 复核），
+> 并经本机原型实测；Console 章节的 26.0.0.500 行为为 2026-10-20 实机验证。
 
 ## 平台服务全景（客户端五大测试服务 + 工具）
 
@@ -30,28 +31,136 @@ DevEco Testing 客户端（Windows/Mac，需华为账号登录；首次启动须
 
 ## DevEcoTestingConsole 命令行执行测试（CI 可用）
 
-客户端自带控制台脚本，**每台 PC 并发任务 ≤4，性能测试任务同时只能 1 个**（内存消耗大）。
+> 2026-10-20 更新：本机已装客户端 **26.0.0.500**，以下命令、参数与行为均经官方文档 + 本机实测双重核对。
+
+**本质是客户端的命令行外壳**：`DevEcoTestingConsole.sh/.bat` 启动 Java `ConsoleLauncher`，把参数发给
+正在运行的客户端执行（日志里的 `Server response: Echo: ...` 就是这条本地链路）。因此**客户端必须常驻
+且已登录**（设置 → 基本设置 → 开启「登录状态保活」），Console 不能脱离客户端独立跑；官方只提供
+Windows/macOS，没有 Linux 无头版。
+
+### 命令
+
+| 命令 | 作用 | 实测/注意 |
+| --- | --- | --- |
+| `-params <json>` | 创建并执行测试任务 | JSON 用 UTF-8 无 BOM；路径勿含中文/空格/特殊字符 |
+| `-taskIds "<id[,id]>"` | 查询任务状态 | 返回 `{"taskId":"...","state":"running"}`；逗号分隔可批量 |
+| `-stopTask "<id[,id]>"` | 停止任务 | 对不存在的 ID 也回 `stop task success`，停完用 `-taskIds` 复核 |
+| `-update true/false` | 更新测试服务 | 未下载时即使 `false` 也会下载；已下载时 `true` 才更新 |
+| `-cleanupPolicy none\|Nd\|Nt` | 报告保留策略 | **需与 `-params` 同传**；单独执行报 `DT.100304`；天数/个数 1-100000 |
+| `-help` | 帮助 | 实测只列 `-params`，其余命令可用但未进帮助 |
 
 ```bash
-# Mac：客户端包内 java.jdk 的 bin 目录下执行（初次执行先 chmod +x）
+# Mac：客户端包内 java.jdk 的 bin 目录下执行（脚本默认可能无执行位，用 sh 或 chmod +x）
 /Applications/DevEco_Testing_for_App.app/Contents/PlugIns/java.jdk/Contents/Home/bin/DevEcoTestingConsole.sh \
-  -params <参数json路径>            # json 用 UTF-8 无 BOM；路径勿含中文/空格/特殊字符
-DevEcoTestingConsole.sh -taskIds "<id>"    # 查任务状态（逗号分隔可批量）
-DevEcoTestingConsole.sh -stopTask "<id>"   # 停任务
-DevEcoTestingConsole.sh -params <json> -update true   # 服务卡片更新
-DevEcoTestingConsole.sh -cleanupPolicy 30d # 报告清理：N.d 天数 / N.t 个数，默认不清理
+  -params <参数json路径>
+DevEcoTestingConsole.sh -taskIds "id1,id2"                 # 批量查状态
+DevEcoTestingConsole.sh -stopTask "id1"                    # 停任务
+DevEcoTestingConsole.sh -params <json> -update true        # 更新服务卡片
+DevEcoTestingConsole.sh -params <json> -cleanupPolicy 30d  # 任务后保留 30 天报告
 ```
 
-- 参数 json 结构：`taskParams` 内 `solutionName`（服务名）+ 各服务专属参数 + `sn`（设备号数组）+ `taskName`。
-  五大服务的完整参数表见官方《命令行执行测试》，例如场景化性能测试必填
-  `executeRounds/manualScriptPath/caseList/perf/system/std/saveAllImages/generateIdeFile/sn/taskName`。
-- 任务产物：结束日志 `[command task status] taskPath: …` → `<taskPath>/export/` 下有
-  `report.html` 与机器可读的 **`2d_report_data.json`**（isTaskPass / resultSummary / resultDetails）——
-  CI 判定直接解析这个 json。
-- 🌟 高频报错：`Connection refused`=客户端没开；`Could not create the Java Virtual Machine`=启动目录不对；
-  `DT.1001xx` 设备类 / `DT.1002xx` 任务类 / `DT.1003xx` 参数类 / `DT.1005xx` 证书过期。
-- 🌟 **多 hdc 冲突坑**：环境里有多个 hdc server 会 file send/recv 失败——保证只有一个 hdc 进程（`hdc kill`）。
-- 客户端自带的 hdc 在 `<客户端解压路径>/DevEco Testing/app/resources/bin`。
+### 支持的服务与参数要点
+
+命令行当前覆盖 5 类服务（不是客户端全部卡片）：场景化性能、性能基础质量、稳定性基础质量、
+内存泄漏、上架预检（本地）。
+
+| 服务 | `solutionName` | 必填核心字段 | 关键范围 |
+| --- | --- | --- | --- |
+| 场景化性能 | `场景化性能测试` | `executeRounds`、`manualScriptPath`、`caseList`、`std`、`watchingKpi.perf/system`、`sn`、`taskName` | 轮次 1-10；`caseList` 至少 1 条 |
+| 性能基础质量 | `性能基础质量测试` | `package.name` 或 `installAppPath`、`startTimes`、`traversalTimes`、`std`、`watchingKpi`、`traversalSceneType:"scene"`、`traversalAction:"basic"`、`sn`、`taskName` | 启动 1-10 次；遍历 10-120 分钟 |
+| 稳定性基础质量 | `稳定性基础质量测试` | `package.name`、`testDuration`、`sn`、`taskName` | 10-60000 分钟；已安装应用时 `uninstallApp:"false"` |
+| 内存泄漏 | `内存泄漏测试` | `package.name`、`testDuration`、`sn`、`taskName` | 10-10080 分钟 |
+| 上架预检（本地） | `应用上架预检（本地）` | `sn`（≤3 台）、`isUploadApp`、`packageName`、`softwareCatagory`、`app_path`、`taskName` | 综合预检仅 hap；自定义 hap/zip |
+
+- 所有参数包在顶层 `taskParams`；`sn` 是数组（即使单台）。
+- **`package.name` vs `packageName`**：前四类用 `package.name`，上架预检用 `packageName`。
+- **`isUploadApp` 名字反直觉**：`"true"` = 综合预检，`"false"` = 自定义预检（此时才需要 `customTest`）。
+- **性能指标嵌在 `watchingKpi` 下**（`perf` / `system`），`std` 在示例中是数组，不要按参数表平铺。
+- **类型不统一**：布尔/数字在不同服务示例里有时是字符串（`"true"` / `"10"`），有时是原生类型；
+  直接复用官方示例类型，否则容易触发 `DT.100304` / `DT.100350` 系列校验错误。
+- 上架预检的 `app_path` 必须与待测应用同版本；`app.history.package.path` 可传历史上架包；
+  `softwareCatagory` 需填三级应用类别。
+
+### 并发与边界
+
+- 每台 PC 同时任务 **≤4**（`DT.100201`）；性能类（上架预检 / 场景化性能 / 性能基础质量）
+  同时只能 **1 个**（`DT.100202`）。
+- 上架预检最多 **3 台**设备（`DT.100321`）；每个 JSON 对应一个服务，新任务建议开新命令行窗口。
+- 客户端非正常退出后，已下发的任务在设备上可能继续执行。
+- 磁盘 <10GB 直接拒绝（`DT.100601`）；环境只能有一个 hdc server（Docker 内也要 `hdc kill`）。
+
+### 输出与 CI 判定
+
+结束日志：
+
+```text
+[command task status] taskPath: <任务数据目录>
+[command task status]（taskName）... task state is finish/failed/stop/timeout
+[command task status] task completed or task stop
+```
+
+产物在 `<taskPath>/export/`：`report.html` 与机器可读的 `2d_report_data.json`。报告骨架：
+
+```json
+{
+  "isTaskPass": false,
+  "generalData": {
+    "taskInfo": {"taskId": "...", "taskName": "...", "taskPath": "...", "taskParams": {}},
+    "appInfo": {"bundleName": "...", "versionName": "...", "apiLevel": "..."}
+  },
+  "expandData": [
+    {
+      "serviceType": "compatibility|power|stability|ux|performance|performanceScript",
+      "resultSummary": {
+        "satisfaction": "92%",
+        "problems": [],
+        "executeInfos": [],
+        "rulesResult": {"total": 34, "pass": 12, "failed": 1, "warning": 0,
+                        "not_involved": 10, "device_required": 7, "exception": 0, "conditional": 4}
+      },
+      "resultDetails": []
+    }
+  ]
+}
+```
+
+- 上架预检通常有 5 个 `expandData`：`compatibility` / `power` / `stability` / `ux` / `performance`。
+- 场景化性能样例不一定有 `isTaskPass`，需结合 `resultSummary` / `resultDetails` 判断。
+- 🌟 **错误时进程退出码仍为 0**（实测 `DT.100304` / `DT.100306` 均 exit 0）——CI 必须解析 stdout
+  里的 `error_code` 或最终报告，不能只看 exit code。
+
+### 错误码速查
+
+| 错误码段 | 类别 | 常见原因 |
+| --- | --- | --- |
+| `DT.1001xx` | 设备 | SN 为空/非法、设备正在执行任务、应用不存在 |
+| `DT.1002xx` | 任务 | 超过 4 个任务、已有性能任务、预执行失败 |
+| `DT.1003xx` | 参数 | 包名/时间/路径非法、JSON 解析失败 |
+| `DT.1004xx` | 服务 | 服务不存在、更新失败 |
+| `DT.1005xx` | 鉴权 | 证书缺失/过期/鉴权失败 |
+| `DT.1006xx` | 环境 | 磁盘 <10GB |
+| `DT.1007xx` | 网络 | 网络异常 |
+| `DT.1008xx` | 未知 | 未知异常 |
+| `DT.1009xx` | 登录 | 用户未登录 |
+
+高频具体项：`DT.100201` 任务超 4 个、`DT.100202` 已有性能任务、`DT.100321` 上架预检超 3 台、
+`DT.100340` 黑名单关键字超 30 个、`DT.100341` deeplink 非法、`DT.100344` 稳定性时长非法、
+`DT.100352` 性能遍历时长非法、`DT.100357` caseList 为空、`DT.100601` 磁盘不足、`DT.100901` 未登录。
+
+### 本机实测补充（2026-10-20，26.0.0.500）
+
+- 客户端已装于 `/Applications/DevEco_Testing_for_App.app`，版本 26.0.0.500；Console 脚本位于
+  `Contents/PlugIns/java.jdk/Contents/Home/bin/DevEcoTestingConsole.sh`。
+- 脚本默认无执行位（644），直接运行 `permission denied`；用 `sh <脚本>` 或 `chmod +x`。
+- `-help` 只列 `-params`；`-taskIds` 查真实任务返回 `state=running`。
+- `-stopTask` 对不存在的任务 ID 也返回 `stop task success`——不要把它当停止成功的唯一证据。
+- `-cleanupPolicy none` 单独执行返回 `DT.100304`；与 `-params` 同传时通过参数解析。
+- `-params` 指向不存在的 JSON 返回 `DT.100306 this json file has exception`。
+- 以上验证使用不存在的任务 ID / 不存在的 JSON，未触碰正在运行的真实任务。
+
+### 客户端自带 hdc
+
+`<客户端解压路径>/DevEco Testing/app/resources/bin`；识别不到设备时把它配进 PATH。
 
 ## hypium-perf 自定义性能脚本（场景化性能测试的脚本侧）
 
@@ -119,9 +228,10 @@ HypiumProjectTemplate.zip，结构 `aw/`（自定义模块）+ `config/user_conf
 | 坑③ | `find_component` 找不到返回 **None**（不抛异常），断言需自查 |
 | 坑④ | xdevice 6.0.7.210 的 telemetry 有 datetime 时区 bug，日志刷 ValueError 警告（无害噪声）；运行时在 **CWD 生成 `reports/`** 目录（.gitignore 需覆盖） |
 
- hypium-perf 本体与 DevEcoTestingConsole 依赖 DevEco Testing 客户端（安装包从客户端服务卡片获取），
-未入本机原型范围；装好客户端后按上文两节操作即可。**稳定性压测与性能/时延采集不需要等客户端**：
-系统自带的 WuKong 与 SP_daemon 场景化采集零安装可用，见 `harmonyos-system-test-tools.md`。
+hypium-perf 本体依赖 DevEco Testing 客户端（安装包从客户端服务卡片获取）。**DevEco Testing 客户端已于
+2026-10-20 确认本机安装（26.0.0.500），DevEcoTestingConsole 命令链路已实测**；hypium-perf 脚本侧
+仍以官方配套版本为准。**稳定性压测与性能/时延采集不需要等客户端**：系统自带的 WuKong 与 SP_daemon
+场景化采集零安装可用，见 `harmonyos-system-test-tools.md`。
 
 ## 官方文档（devecocli docs search 可检索到全文）
 

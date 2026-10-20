@@ -20,7 +20,8 @@
 
 - opencode.json 形状：`{"mcp":{"<名>":{"type":"local","command":["cmd","arg"],"environment":{...},"enabled":true}}}`——`command` 是**数组**（非 command＋args 两字段）、env 键名是 `environment`。
 - 合并用 jq `*` 递归深合并（同 #25 教训：同名 server 的本机独有 env 键不被浅合并抹掉）；现有 server（如 reeve）原样保留。
-- `opencode mcp list` 逐 server 报 connected 状态＝连通性验收命令。
+- `timeout` 是**每 server 毫秒值**（官方 schema `McpLocalConfig.timeout`，缺省 5000）；模板里用 `timeoutMs` 表达，install.sh 转换时映射为 `timeout`——everos-memory 的 `add_memory(wait=true)` 需 180000 才不撞默认超时。
+- `opencode mcp list` 逐 server 报 connected 状态＝连通性验收命令；指向已卸载 App 的失效 server（如 reeve）会在此报 `failed` 且不阻断其余 server。
 
 ## 全局规则与其他坑
 

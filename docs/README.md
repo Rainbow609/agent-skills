@@ -9,10 +9,11 @@
 | --- | --- | --- | --- |
 | `coding-plan-quota-and-pricing.md` | 订阅制 Coding Plan 额度与单价速查（OpenCode Go / Z.ai GLM / Kimi） | 通用 | 2026-10-15 |
 | `git-common-knowledge.md` | Git 常用知识：vendor / workflow / worktree | 通用 | 2026-10-15 |
-| `harmonyos-mcp-ecosystem.md` | 鸿蒙开发 MCP 生态（官方双线、模拟器工具组、避坑清单） | 通用 | 2026-10-16 |
+| `harmonyos-mcp-ecosystem.md` | 鸿蒙开发 MCP 生态（deveco-cli serve mcp、社区方案、避坑清单、CLI 兜底控制面；10-20 补官方 CLT 的 Emulator/hdc 路径） | 通用 | 2026-10-16（10-20 增补） |
 | `kimi-code-agent-tools-whitelist.md` | Kimi Code 子代理 tools 白名单（必须用 Kimi Code 工具名） | 通用 | 2026-10-15 |
 | `tag-based-release-workflow.md` | tag 唯一版本源：打 tag 之后的开发与版本演进 | manbo-reader 实践 | 2026-10-15 |
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
+| `harmonyos-deveco-testing-platform.md` | DevEco Testing 平台全景与 Console 命令行：五大服务、五类 CLI 服务参数、并发/错误码、`2d_report_data.json` CI 判定、本机 26.0.0.500 实测 | 官方文档 + 本机客户端实测 | 2026-10-16（10-20 增补） |
 | `harmonyos-deveco-studio-cli.md` | 鸿蒙命令行工具链：DevEco 内置 vs 官方 CLT 定位、官方 CLT 26.0.0.851 安装与 PATH、hvigorw 参数/构建配方、codelinter 门禁、hstack 6.1.0 差异、本机实测 | 官方文档 + 本机 26.0.0.851 实测 | 2026-10-20 |
 | `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
 | `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
@@ -22,11 +23,13 @@
 | `openspec-matt-skills-combination.md` | OpenSpec × Matt Skills 结合实践：官方互不集成、社群代表方案（#285 dexhunter：OpenSpec 权威计划层＋grill 前置澄清＋不养双真源）、正交性分析、三种结合模式、五项冲突面裁决、manbo 落地示例 | Discussion #285 一手 + 两篇精读文档分析（2026-10-16） | 2026-10-16 |
 | `agent-orchestrator-planner-patterns.md` | AI 编码代理「主会话=规划者」编排模式：规划者四职责框架、六家官方一手对比（Anthropic/Codex/Copilot/Cursor/Cognition/Google）、多代理 vs 单线程分歧裁决（读写分离条款）、社区专家配方四家（Harper Reed/IndyDevDan/Ralph/Matt Pocock）、反模式八条、本机体系覆盖度与五条增量 | 六家官方文档/工程博客 + 社区作者一手文章（2026-10-17 两轮并行子代理调研） | 2026-10-17 |
 | `harmonyos-image-moire.md` | 图像抗摩尔纹（anti-moiré / descreen）：三类摩尔纹的区分与判据、「缩放比例决定条纹」核心机制、空间域/频域/选择性掩膜/AI 四类方案盘点（含「AI 无端侧生态」判定）、HarmonyOS 三通道可行性与工程配方 | manbo-reader 调研 + GitHub 实访 + 本机 SDK 实查（2026-10-16 二次核验 + 三次跨模型复核） | 2026-10-16 |
-| `opencode-zen-gateway-session-header.md` | opencode Go 网关强制会话头与本地注入代理（含 content-encoding 透传、DeepSeek thinking 回传两个后续坑、Go 档模型协议面速查） | 实测（ZCode + verify_ui 端到端） | 2026-10-16（10-18 增补） |
-| `deveco-codegenie-mcp-guard.md` | deveco-codegenie MCP 的 tools/list 并发丢包缺陷：根因、可复用排查手法、透明 guard 代理全文与并发验收 | manbo-reader 会话实测（8/12 并发对照） | 2026-10-18 |
+| `opencode-zen-gateway-session-header.md` | opencode Go 网关强制会话头与本地注入代理（含 content-encoding 透传、DeepSeek thinking 回传两个后续坑、Go 档模型协议面速查） | 实测（ZCode + 本地注入代理端到端） | 2026-10-16（10-18 增补） |
 | `everos-selfhost-operations.md` | EverOS 1.4.2 自托管运维：进程管理（start-only／SIGTERM 挂起需 -9）、配置热加载边界、写路径 v2 契约实测、MCP 通道坑、检索方法矩阵与软依赖设计、官方模型实践（decider 静默 404 坑）、隐私上云阶梯、本地 Ollama vs 全上云性能账与卡死诊断配方、迁移原因（Memorix 中文检索失效公平复测 6/6 零命中） | 实测（本机 M4/16GB 全链计时）＋ everos 1.4.2 包源码明文 | 2026-10-19 |
 | `opencode-config-sync-gotchas.md` | opencode 1.18 接入同步链：技能零管道（原生读 ~/.agents/skills）、agents tools 数组非法＝配置校验整体报错、MCP 本地格式转换、全局 AGENTS.md 路径、git track／apm deny CWD 两坑 | 实测（opencode 1.18.15）＋官方文档明文 | 2026-10-19 |
 | `openspec-agents-ecosystem-survey.md` | OpenSpec 增强与并行代理生态三线调研：openspec-plus 抄机制清单（不整体安装）、并行编排器共识（读写分离印证）与 4 个可借鉴机制（tasks.md 三路合并/冲突分波/Track 分区/热点串行）、openspec-agents 深读与 ZCode 安装使用配方（本机已装 0.149.1：门禁机制、clarify HARD-GATE、MCP 冒烟方法、旧会话不热刷新坑、无人值守与 Java 口味局限） | 两仓库源码/全文直读 + 十仓库 README/关键源文件 + 本机安装实测（2026-10-19） | 2026-10-19 |
+| `ai-subscription-quota-endpoints.md` | AI 订阅/套餐额度**查询接口**速查：四类数据来源分层（官方/半官方/社区逆向/本地日志）、14 家 endpoint 与字段、高峰时段可编码规则（含中国节假日例外与「已取消」标注）、**GCMP 作为上游的自动/半自动边界**（gcmp.dev 公开配置、tokenPricing 四形态坑、cron 峰谷边界、许可与节奏）、口径陷阱 | 三路并行调研（GitHub 项目 + 厂商文档）+ 官方文档一手复核 + GCMP 上游实测（2026-10-19） | 2026-10-19 |
+| `ruleset-distribution-cn.md` | 规则集/配置下发的国内可达方案：镜像与 CDN 可达性矩阵（含「未实测」标注）、jsDelivr 12h 缓存与限流假 200、Gitee/npmmirror 两条免备案通道、备案+境内 CDN 成本、客户端多源拉取顺序与八步校验降级 | 公开 issue/官方文档 + 本机实测（出口非大陆，已标注） | 2026-10-19 |
+| `harmonyos-immersive-light-widgets-webview.md` | 鸿蒙 Next 三件套：沉浸光感（官方术语 + uiMaterial/ImmersiveMaterial，API 26.0.0 起）、服务卡片硬限制（刷新配额/不能联网/尺寸与圆角规范/用多定点刷新做分钟级高峰切换）、ArkWeb 登录能力与审核 3.16 要求 | developer.huawei.com 设计文档 + OpenHarmony docs 原文精读 | 2026-10-19 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 

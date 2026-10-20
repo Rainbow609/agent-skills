@@ -3,7 +3,7 @@
 > 适用前提：把 opencode Go（OpenAI 兼容端点 `https://opencode.ai/zen/go/v1`，官方 docs 另列
 > `/inference/go/...` 族）接给**只能配 BASE_URL / API_KEY / MODEL 三件套、不能配自定义请求头**的
 > 本地工具（MCP server、原生二进制、闭源 CLI 等）。
-> 本文为 2026-10-16 实测：curl 实打 + `codegenie-mcp-server`（Mach-O）strings 分析 + 官方
+> 本文为 2026-10-16 实测：curl 实打 + 某原生 MCP 二进制 strings 分析 + 官方
 > `docs/go` 页口径，非训练记忆。**2026-10-18 增补**：接入后仍会踩的两个代理自身缺陷
 > （content-encoding 透传 / DeepSeek thinking 回传）与 Go 档模型协议面速查，见「接入后仍会踩
 > 的两个坑」节；同日 install.sh 覆盖坑已根治（PR #25）。网关行为可能变化，引用前先跑一遍
@@ -27,10 +27,9 @@ HTTP_STATUS:400
    同一 id 供路由优化与 prompt caching；且声明对流量做滥用监控——不要每次随机换值。
 4. **谁天然能过**：官方 docs 口径，Go 能识别部分客户端的原生会话头（ZCode、Claude Code、Codex）；
    已知有问题的客户端清单：DeepSeek Harness、GitHub Copilot Chat、Kimi Code、MiMo Code。
-5. **谁过不了**：只发标准 OpenAI 头（Authorization / Content-Type）的实现。实例：
-   `@deveco-codegenie/mcp` 的 `codegenie-mcp-server` 是 Mach-O 原生二进制，LLM 配置只有
-   `UI_VERIFY_BASE_URL / UI_VERIFY_API_KEY / UI_VERIFY_MODEL_NAME` 三件套（兜底别名 `RC_*`），
-   strings 分析确认无任何自定义头配置点——端点拼接写死为 `baseURL + "/chat/completions"`。
+5. **谁过不了**：只发标准 OpenAI 头（Authorization / Content-Type）的实现——凡 LLM 配置只给
+   `BASE_URL / API_KEY / MODEL` 三件套、无自定义头配置点的本地工具（MCP server、原生二进制、
+   闭源 CLI）都属此列；端点拼接一般写死为 `baseURL + "/chat/completions"`。
 
 ## 判定流程（30 秒定方案）
 
@@ -182,26 +181,8 @@ j.thinking = { type: "disabled" };   // 实测有效；"reasoning_effort": "none
 （`/inference/go/...`、`/zen/go/...`，需 `x-opencode-session`）是两条独立计费，订阅在手不等于
 credits 可用；Cloudflare 会按 UA 拦截（错误码 1010），python-urllib 默认 UA 必被挡，脚本里要显式带 `User-Agent`。
 
-## 实战案例：@deveco-codegenie/mcp 的 verify_ui
-
-`~/.zcode/cli/config.json` → `mcp.servers.deveco-codegenie.env`：
-
-| 变量 | 值 | 说明 |
-| --- | --- | --- |
-| `UI_VERIFY_BASE_URL` | `http://127.0.0.1:8787/v1` | 指向本地注入代理 |
-| `UI_VERIFY_API_KEY` | opencode Go 的 key | 🌟 密钥只落本机 config.json，不入任何仓库 |
-| `UI_VERIFY_MODEL_NAME` | `deepseek-v4.1-flash` | 视觉判定类任务优先带视觉的模型 |
-
-🌟 **install.sh 覆盖坑（2026-10-18 已根治，PR #25）**：旧版 `install.sh` 用 jq 的 `+`（浅合并）
-合并 `mcp/zcode-mcp.json`，同名 server 条目**整体替换**——`UI_VERIFY_*` 与 `type`/`timeoutMs` 每跑一次
-install.sh 就被抹掉，verify_ui 退回「环境变量未设置」。现已改为 jq 的 `*`（递归深合并：模板键优先、
-本机独有键保留）。**若回退到旧版 install.sh，重跑后仍须手动补回 `UI_VERIFY_*` 三键**。
-
-🌟 改 env 后必须重启会话（MCP server 进程随会话拉起，不热加载）。
-
 ## 备选路线
 
 - **换端点**：接一个无头要求的标准 OpenAI 兼容服务，三件套直配，零基础设施。
-- **MCP sampling**：codegenie 检测到宿主具备 `sampling.tools` 能力且未配 key 时，自动
-  `Setting up SamplingOpenAI` 走宿主模型（宿主的原生会话头天然合规）。依赖宿主支持，当前
-  ZCode 未暴露该能力，故现实路线仍是代理。
+- **MCP sampling**：若本地工具支持 MCP sampling 且宿主暴露该能力，可让服务端改用宿主模型
+  （宿主的原生会话头天然合规），无需本地代理。

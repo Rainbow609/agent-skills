@@ -146,12 +146,6 @@ trace 关键字速查（直接搜）：
 | CPU/内存 | SP_daemon CSV（`ProcCpuUsage`/`pss`；**模拟器 fps 恒 0 无帧数据**——帧级仍走 §6 真机口径） |
 | 崩溃 | faultlogger 目录差分 + **APP_CRASH 下次启动回投**（压测后重启一次 app 回捞）+ hilog E/F 过滤 |
 
-**MCP `get_app_ui_tree`（deveco-codegenie，full 模式）与 dumpLayout 的信息含量差异**（实测）：
-
-- schema：`content.$children` 递归，节点文本在 `$attrs.content`（另有 `accessibilityText`）；13MB/522 节点量级
-- **文本、结构、样式尺寸（vp/fontSize/padding）齐全，但绝对坐标为空**（`position`/`offset` 无值）→ 状态/内容/样式查 MCP 树，几何/位移查 dumpLayout，两工具互补
-- 用法：MCP 需先 `init_project_path`，多设备带 `hvd` 参数；输出为 JSON 文件路径
-
 **驱动坑（§3 延伸）**：sub-List（zIndex 覆盖在 Swiper 之上）的 ListItem 区域会**吞左向手势**——同页右滑可翻、chip 点击全通，属注入受限而非产品回归；降级方案＝**chip 点击风暴**替代滑动风暴，仍可驱动 sub-Swiper 双页装配并逐轮 dump 验证。
 
 **仍需截图/像素源的场景**（如实缺口，勿偷用截图补验）：封面位图内容正确性（错图/花屏——解码计数不证内容）、帧率/掉帧（模拟器无数据）、动画中间态/过渡视觉、canvas 渲染文本（如阅读器页码，UI 树无该文本节点）。
