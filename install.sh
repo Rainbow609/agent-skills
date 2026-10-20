@@ -77,8 +77,8 @@ fi
 #    ZCode 侧：skillshare 的 MCP 客户端列表不含 zcode，无法接管，由本脚本 jq 按 server 合并
 #    （保留 config.json 里的其他 server 与设置；不存在时以模板生成）。
 #    🌟 合并用 jq 的 `*`（递归深合并）而非 `+`（浅合并，同名键整体替换）：同名 server 的
-#    env 必须逐键合并——模板键优先、本机独有键保留。曾用 `+` 导致 deveco-codegenie 的
-#    UI_VERIFY_*（verify_ui 的模型三件套）每跑一次 install.sh 就被抹掉一次。
+#    env 必须逐键合并——模板键优先、本机独有键保留（本机独有 env 键曾因用 `+` 每跑一次
+#    install.sh 就被整体抹掉一次）。
 #    Claude 侧：skillshare 接管——仓库定义导入 Skillshare 源后 sync 进 ~/.claude.json
 #    （Claude Code 唯一的用户级 MCP 路径；旧脚本写过的 ~/.claude/mcp.json 并非 Claude 读取路径）。
 #    skillshare 缺失时回退为 jq 直接合并进 ~/.claude.json。
@@ -142,7 +142,7 @@ if [ -d "$HOME/.config/opencode" ]; then
     cp "$OPENCODE_CONFIG" "$OPENCODE_CONFIG.bak-$ts"
     # 🌟 同 ZCode 侧：用 jq `*` 深合并而非 `+`，同名 server 的本机独有 env 键才不会被抹掉。
     if jq --slurpfile mcp "$REPO_DIR/mcp/zcode-mcp.json" \
-        '.mcp = ((.mcp // {}) * ($mcp[0].servers | to_entries | map({key: .key, value: {type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true}}) | from_entries))' \
+        '.mcp = ((.mcp // {}) * ($mcp[0].servers | to_entries | map({key: .key, value: ({type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true} + (if .value.timeoutMs then {timeout: .value.timeoutMs} else {} end))}) | from_entries))' \
         "$OPENCODE_CONFIG" > "$OPENCODE_CONFIG.new" && [ -s "$OPENCODE_CONFIG.new" ]; then
       mv "$OPENCODE_CONFIG.new" "$OPENCODE_CONFIG"
       log "opencode MCP 已合并进 ${OPENCODE_CONFIG}（备份 .bak-${ts}）"
@@ -153,7 +153,7 @@ if [ -d "$HOME/.config/opencode" ]; then
     fi
   else
     jq -n --slurpfile mcp "$REPO_DIR/mcp/zcode-mcp.json" \
-      '{mcp: ($mcp[0].servers | to_entries | map({key: .key, value: {type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true}}) | from_entries)}' \
+      '{mcp: ($mcp[0].servers | to_entries | map({key: .key, value: ({type: "local", command: ([.value.command] + (.value.args // [])), environment: (.value.env // {}), enabled: true} + (if .value.timeoutMs then {timeout: .value.timeoutMs} else {} end))}) | from_entries)}' \
       > "$OPENCODE_CONFIG"
     log "已按模板生成 ${OPENCODE_CONFIG}（新机首次配置）"
   fi
