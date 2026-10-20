@@ -1,0 +1,23 @@
+{
+  "name": "linter-cli",
+  "version": "0.1.0",
+  "description": "Standalone ArkTS linter CLI.",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "linter-cli": "./bin/linter-cli.js"
+  },
+  "files": [
+    "bin/",
+    "runtime/compiler/",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node ./bin/linter-cli.js",
+    "check": "node ./bin/linter-cli.js --help"
+  }
+}

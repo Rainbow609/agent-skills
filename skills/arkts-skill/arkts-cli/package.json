@@ -1,0 +1,23 @@
+{
+  "name": "arkts-cli",
+  "version": "0.1.0",
+  "description": "Standalone ArkTS checker, abc generator, and ark_js_vm runner for pure non-UI .ets files.",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "arkts-cli": "./bin/arkts-cli.js"
+  },
+  "files": [
+    "bin/",
+    "runtime/",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node ./bin/arkts-cli.js",
+    "check": "node ./bin/arkts-cli.js --help"
+  }
+}
