@@ -13,6 +13,7 @@
 | `kimi-code-agent-tools-whitelist.md` | Kimi Code 子代理 tools 白名单（必须用 Kimi Code 工具名） | 通用 | 2026-10-15 |
 | `tag-based-release-workflow.md` | tag 唯一版本源：打 tag 之后的开发与版本演进 | manbo-reader 实践 | 2026-10-15 |
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
+| `harmonyos-deveco-studio-cli.md` | 鸿蒙命令行工具链：DevEco 内置 vs 官方 CLT 定位、官方 CLT 26.0.0.851 安装与 PATH、hvigorw 参数/构建配方、codelinter 门禁、hstack 6.1.0 差异、本机实测 | 官方文档 + 本机 26.0.0.851 实测 | 2026-10-20 |
 | `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
 | `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
 | `ai-coding-workflow-openspec.md` | AI Coding 工作流参考：初始化三件套（Skills/MCP/AGENTS.md）、OpenSpec opsx 六命令与按阶段模型分级、提示词模板、giscus strict=SHA-1 机制与跨语言评论聚合 | 外部博客调研（Ruixe 2026-09）+ giscus 官方文档一手复核 | 2026-10-16 |
