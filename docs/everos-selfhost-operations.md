@@ -41,6 +41,13 @@ POST /api/v2/memory/add
 - flush：`POST /api/v2/memory/flush`，body 同 scope＋session_id；返回 `no_extraction`＝缓冲已空（可当「已处理」证据复用）。
 - 身份两侧惯例：user 侧 sender_id=`EVEROS_USER_ID`，assistant 侧=`assistant-<user_id>`（everos-mcp `server.py` 明文）。
 
+### 抽取 JSON 尾逗号故障与 prompt slot 修复（2026-10-20 实测闭环）
+
+- **故障与定位**：长中文条目抽取时 `episode_extract_retry` 连续报 `Illegal trailing comma before end of object`（deepseek-v4.1-flash 对长 JSON 稳定输出尾逗号，重试救不了——每次都坏），重试期间 flush 撞上变 500（MCP 侧表现＝`background add_memory failed: Internal server error`）；**短条目不受影响**。定位一条命令：`grep episode_extract_retry /tmp/everos-server.log`。
+- **官方修复位（1.4.2）＝prompt slot 覆盖**：`site-packages/everos/config/prompt_slots/episode_extract.yaml`（`_config_root()` 指向包内 `config/`；注释明文「`~/.everos/` 三层覆盖预留未来里程碑」，即当前版本唯一官方定制位）。做法＝`enabled: true` + `template` 填入官方 `everalgo/user_memory/prompts/en/episode.py::EPISODE_GENERATION_PROMPT` 全文，末尾（recency 位）追加「RFC 8259 严格语法块：禁尾逗号 / 转义引号换行 / 裸 JSON 对象输出」。**模板契约**：三个占位符 `{conversation_start_time}`/`{conversation}`/`{custom_instructions}` 必须保留；字面大括号必须双写（`render_prompt` 镜像 `str.format`：`{{`→`{`，占位符缺失不报错会静默漏渲染）。
+- **验收**：同一长条目重写，全链路零重试（episode upserted=1 / atomic_facts count=19 attempt=0 / user_profile UPDATE / flush 200）。
+- **⚠ 升级即失效**：`uv tool upgrade everos` 会把该 yaml 重置回 `enabled: false`——抽取又开始报尾逗号时先查这里。种子副本在 `~/.everos/prompt_slots/episode_extract.yaml`，恢复后 `launchctl kickstart -k gui/$(id -u)/com.rainbow.everos-server` 重启（实测 kickstart -k 干净换 pid，未触发 EngineLockHeldError）。
+
 ## everos-memory MCP 通道
 
 - 注册：`uvx everos-mcp`，env `EVEROS_BASE_URL`／`EVEROS_USER_ID`——身份由 MCP 服务端注入，工具调用无需传 user_id。
