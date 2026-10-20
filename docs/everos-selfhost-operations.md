@@ -8,7 +8,13 @@
 
 - 启动＝`everos server start`（自守护进程化，父进程归 launchd）；**只有 `start` 一个子命令**，无 stop/restart（官方 `everos server --help` 明文）。重启＝kill＋start。
 - 🌟 实测坑：SIGTERM 后进程可能**挂起不退**（端口已释放、但 OME 引擎锁仍持有，新实例报 `EngineLockHeldError` 启动失败）——SIGTERM 等 4-5s 不退就 `kill -9`；引擎锁是 flock 文件锁，进程死锁自释放。
-- 无 launchd/brew 服务管理条目（自行守护）。
+- **开机自启（2026-10-20 配置，实测）**：此前**无 launchd/brew 服务管理条目**，纯手动 start、重启即失联
+  （实际案例：10 组 everos-mcp 客户端因服务端不在而空转）。现配 LaunchAgent
+  `~/Library/LaunchAgents/com.rainbow.everos-server.plist`：`RunAtLoad` 登录拉起 +
+  `ThrottleInterval 30s` 兜底，**不配 KeepAlive**——`start` 自守护后包装进程即退，
+  KeepAlive 会把「启动成功→包装退出」误判为崩溃无限重启打转，还反复撞上面的 EngineLockHeldError；
+  日志 `/tmp/everos-server.{log,err}`。加载：`launchctl bootstrap gui/$(id -u) <plist>`（卸载 bootout）。
+  在线判定：`curl -m 3 http://127.0.0.1:8000/` 返回 HTTP 404（API 服务器根路由为空）＝服务已听。
 
 ## 配置体系（~/.everos/）
 
