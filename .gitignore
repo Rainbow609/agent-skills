@@ -2,3 +2,6 @@
 .tmp/
 *.bak-*
 linter-cache/
+
+# PPT 产物不入库
+*.pptx
