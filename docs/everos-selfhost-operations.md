@@ -47,6 +47,7 @@ POST /api/v2/memory/add
 - **官方修复位（1.4.2）＝prompt slot 覆盖**：`site-packages/everos/config/prompt_slots/episode_extract.yaml`（`_config_root()` 指向包内 `config/`；注释明文「`~/.everos/` 三层覆盖预留未来里程碑」，即当前版本唯一官方定制位）。做法＝`enabled: true` + `template` 填入官方 `everalgo/user_memory/prompts/en/episode.py::EPISODE_GENERATION_PROMPT` 全文，末尾（recency 位）追加「RFC 8259 严格语法块：禁尾逗号 / 转义引号换行 / 裸 JSON 对象输出」。**模板契约**：三个占位符 `{conversation_start_time}`/`{conversation}`/`{custom_instructions}` 必须保留；字面大括号必须双写（`render_prompt` 镜像 `str.format`：`{{`→`{`，占位符缺失不报错会静默漏渲染）。
 - **验收**：同一长条目重写，全链路零重试（episode upserted=1 / atomic_facts count=19 attempt=0 / user_profile UPDATE / flush 200）。
 - **⚠ 升级即失效**：`uv tool upgrade everos` 会把该 yaml 重置回 `enabled: false`——抽取又开始报尾逗号时先查这里。种子副本在 `~/.everos/prompt_slots/episode_extract.yaml`，恢复后 `launchctl kickstart -k gui/$(id -u)/com.rainbow.everos-server` 重启（实测 kickstart -k 干净换 pid，未触发 EngineLockHeldError）。
+- **2026-10-23 复现与边界**：prompt slot 仍为 `enabled: true` 且含 RFC 8259 严格块，但同批两条约 1500–2000 字的长中文条目仍出现尾逗号：一条连续 3 次重试失败并令 `/api/v2/memory/flush` 返回 500，另一条长条目则成功入库——**属概率性失败，不是「长条目必坏」**。拆成约 350–450 字的两条短消息后均一次成功（episode upserted=1、atomic_facts 17/11、flush 200）。处置顺序：先看 yaml 是否被升级重置；若已启用仍失败，**优先拆短重写**，不要只重启或无限重试。
 
 ## everos-memory MCP 通道
 
