@@ -3,5 +3,8 @@
 *.bak-*
 linter-cache/
 
+# 构建缓存
+.hvigor/
+
 # PPT 产物不入库
 *.pptx
