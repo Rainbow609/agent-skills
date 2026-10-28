@@ -50,6 +50,7 @@
 | `harmonyos-architecture-layered-modular.md` | 鸿蒙应用架构：三层分层（产品定制/基础特性/公共能力）与依赖方向、单/多 HAP 选型、HAR/HSP/Feature HAP 取舍、HSP+HAR 同引 HAR 的单例失效与官方启动实测 | 官方最佳实践《分层架构设计》《模块化设计》原文逐节复核 | 2026-10-28 |
 | `harmonyos-privacy-data-security.md` | 鸿蒙隐私与数据安全：六原则、模糊定位权限矩阵、Picker/动态权限、设备 SL1–SL5 与数据 S1–S4、跨设备同步矩阵、el1–el4、HUKS AES 配方与体检数据二次加密 | 官方最佳实践《应用隐私保护》《应用数据安全》原文逐节复核 | 2026-10-28 |
 | `harmonyos-ci-automation.md` | 鸿蒙 CI 自动化：官方构建/测试/检查命令基线、报告产物路径、失败策略、覆盖率、设备供给，附两篇社区博客 15 条命令/结论纠错 | 华为云社区博客（Jack20，2026-06-24）+ 官方文档/devecocli 离线库复核 | 2026-10-28 |
+| `harmonyos-game-performance-toolchain.md` | 鸿蒙游戏性能分析与调优工具链：HiSmartPerf Editor/Device、GPM、PGA、PGP、PGD、AILOD、二进制优化、APMS、场景感知；含 Editor 采集配置、报告分析、版本与 FAQ | 官方 doccenter-games / AppGallery-connect-Guides 原文（登录后逐页核对） | 2026-10-28 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 

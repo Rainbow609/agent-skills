@@ -5,6 +5,8 @@
 > 核实自官方知识库《wukong稳定性工具使用指导》《HiSmartPerf_Device性能使用指导》
 > （devecocli docs，2026-10-16；SP_daemon 参数/字段/约束 2026-10-28 按官方 markdown 原文逐节复核）。
 > 客户端版专属能力见 `harmonyos-deveco-testing-platform.md`。
+> 游戏侧 PC 工具链（HiSmartPerf Editor/Device、GPM、PGA/PGP/PGD、AILOD、二进制优化）见
+> `harmonyos-game-performance-toolchain.md`。
 
 ## WuKong 稳定性压测（hdc shell 内执行）
 
