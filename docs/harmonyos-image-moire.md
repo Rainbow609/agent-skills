@@ -38,7 +38,7 @@
 - **Android**：`BitmapFactory.Options.inSampleSize` 只做子采样（省内存，非抗锯齿），`inDither` 在 **API 24 已废弃并忽略**（[Android Reference](https://developer.android.com/reference/android/graphics/BitmapFactory.Options)）。
 - **Android 的正解（在纹理层）**：`Bitmap.setHasMipMap` 官方注释"If you know that you are going to draw this bitmap at less than 50% of its original size, you may be able to obtain a higher quality by turning this property on."——正统出路是纹理 mipmap，而不是 `BitmapFactory` 选项。
 
-**渲染层唯一值得做的**：把「缩小时的插值质量」做成用户可见开关（低 / 中 Mipmap / 高），默认选 Mipmap。ArkUI 的 `ImageInterpolation.Medium` 即系统 Mipmap 三角过滤，是把窗口内高频成分按面积平均掉，成本仅一处 `.interpolation()` 属性。
+**渲染层唯一值得做的**：把「缩小时的插值质量」做成用户可见开关（低 / 中 Mipmap / 高），默认选 Mipmap。ArkUI 的 `ImageInterpolation.Medium` 即官方定义的 MipMap 插值（三角过滤/面积平均为经验解释），成本仅一处 `.interpolation()` 属性。
 
 > ✅ 已确认（三次探索补验）：官方知识库 API 参考明确 `ImageInterpolation` 枚举——`None`=最近邻 / `Low`=双线性 / **`Medium`=MipMap** / `High`=Cubic（`devecocli docs search` 命中）。
 
@@ -91,7 +91,7 @@ mihon（24.4k★）全库 920 个 `.kt` 检索 descreen / moire 0 命中（唯�
 
 | 通道 | 可行性 | 依据与限制 |
 | --- | --- | --- |
-| **ArkTS / ImageKit** | **高**，零新依赖 | `PixelMap.scale(f, f, image.AntiAliasingLevel.HIGH)` 可用；空间域模糊 / 双边 / 锐化均有原生原语。⚠️ **勿用 ArkTS 手写逐像素循环**，太慢，必须走原生滤镜 |
+| **ArkTS / ImageKit** | **高**，零新依赖 | `PixelMap` 缩放可用；缩小场景选 `image.AntiAliasingLevel.MEDIUM`（双线性 + Mipmap，官方明确适合缩小），`HIGH` 是三次卷积、适合放大。⚠️ 原生滤镜公开的是模糊与颜色矩阵类；双边、Laplacian 无原生原语，需 NDK/GPU 自实现。⚠️ **勿用 ArkTS 手写逐像素循环** |
 | **C++ NDK** | **高**，频域需自备 FFT | 空间域十几行可完成；频域需移植 FFTW。SDK 自带 `llvm/lib/aarch64-linux-ohos/libomp`（OpenMP 可并行），但**全 SDK 无任何 FFT 库**（fftw / pocketfft 均无） |
 | **GPU shader（Vulkan/GLSL）** | 中 | 空间域 5-tap / 双边可 GPU 化；**FFT 在移动 GPU 上不划算**（多 pass + tile 约束），且图形管线通常已被页翻引擎占用上下文 |
 
@@ -107,7 +107,7 @@ mihon（24.4k★）全库 920 个 `.kt` 检索 descreen / moire 0 命中（唯�
 GaussianBlur 5×5（档 1/2）/ 7×7（档 3） → bilateralFilter(d=7, σ_color = 30/50/80, σ_space = 80) → 3×3 Laplacian 回边（sh_point=5.56, sh_low=-1.14）
 ```
 
-用 ImageKit 原语即可完成，无新依赖，天然"只动网点不动线条"。
+原生模糊 + 颜色矩阵可完成部分步骤；双边与 Laplacian 回边需自写 NDK/GPU 实现，并非零依赖。
 
 ### 6.2 两个必查的耦合点（易踩）
 

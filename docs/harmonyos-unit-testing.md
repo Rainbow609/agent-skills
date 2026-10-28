@@ -14,13 +14,26 @@
    Sendable；系统依赖只能靠 `src/mock/mock-config.json5` 替身（API 11+ Stage 模型）。
    → 可测面 = 纯函数/纯数据层；带系统能力的层靠上设备测试或真机脚本。
 3. **命令行可跑**：`hvigorw test`（本地）/ `hvigorw onDeviceTest`（设备）；
-   `hvigorw test` **不支持 Linux**（CI 只能 macOS runner）；脚本必须在工程根目录执行，
+   `hvigorw test` **不支持 Linux**（CI 用 macOS/Windows runner）；脚本必须在工程根目录执行，
    否则静默不执行（exit 0 无产物）。
 4. **Mock 双机制，生态样例稀疏**：hypium MockKit 只能 mock 应用内自定义对象（官方明示不支持
    系统 API）；mock-config.json5 可替身 @ohos.* 与本地模块，但 GitHub 抽查大厂仓多为空脚手架
    模板——机制能跑，别把它当架构依赖。
 5. ArkTS 约束同样作用于测试代码：describe/it 名必须是字符串字面量且全套件不可重复；
    断言对象要显式 interface（禁 any/解构等仓库规则照常生效）。
+
+## arkxtest 四件套（官方索引页）
+
+官方《自动化测试框架使用指导》本身只是索引，arkxtest 体系分四块：
+
+| 能力 | 官方指南 | 本仓库对应 |
+| --- | --- | --- |
+| 单元测试 | `unittest-guidelines` | 本文 |
+| UI 测试 | `uitest-guidelines` | `harmonyos-app-testing-fullchain.md` §3 |
+| 白盒性能测试 | `perftest-guideline` | 本文（`@ohos.test.PerfTest`，API 20+） |
+| 辅助测试工具 | `testhelper-guidelines` | 官方指南直查 |
+
+入口：[自动化测试框架使用指导](https://developer.huawei.com/consumer/cn/doc/doccenter-testing/arkxtest-guidelines)。
 
 ## 双层执行体系
 
@@ -32,7 +45,7 @@
 | 命令 | `hvigorw test -p module=entry [-p coverage=true]` | `hvigorw onDeviceTest -p module=entry [-p ohos-debug-asan=false]` |
 | 结果落点 | `<module>/.test/default/outputs/test/reports` | `.../outputs/ohosTest/reports` |
 
-- 依赖放 devDependencies：`"@ohos/hypium": "1.0.29"`（ohpm 最新，2026-09 发布；只参与测试态不进包）
+- 依赖放 devDependencies：`"@ohos/hypium"`（官方文档示例 `1.0.25`，Local/Instrument 要求 1.0.25+；实际版本以 ohpm 为准；只参与测试态不进包）
 - 文件名必须 `*.test.ets`，且必须在 `List.test.ets` 注册，否则用例不执行（00522001/2/5）
 - Instrument 如需权限，要在 `src/ohosTest/module.json5` 单独配一份
 - 设备侧等价命令：`hdc shell aa test -b <bundle> -m <module> -s unittest OpenHarmonyTestRunner
@@ -49,7 +62,7 @@
 ## ArkTS / 测试代码专属约束与高频坑
 
 - describe/it 名称必须字符串字面量（用变量报 00521003~00521005），全套件不可重复（00521006/7）
-- Local Test 超时不可配（Instrument 可改），默认 15s
+- Local Test 超时不可配（Instrument 可改），默认 **5000ms**（官方 `-s timeout` 默认值；示例常用 15000）
 - 测试里 `getContext()` 不可用 → 用 `AbilityDelegator.getAppContext`
 - Sendable 相关代码不进 Local Test（官方 concurrency-faq 明示）
 - 升级 DevEco 后老工程测试失败 → 同步 hypium 版本与

@@ -169,7 +169,7 @@ rule 形如 `@performance/foreach-args-check`（性能规则集）——机器�
   CLI 需显式传 `-instancePath`；镜像改过则传 `-imageRoot`。`-delete` 删除的是共享实例，
   勿误删 DevEco 正在用的模拟器。
 - **真机与模拟器**：`hdc list targets` 出 `IP:PORT` 形式即无线调试设备；本机真机
-  HarmonyOS 7.0.0.109 = **API 26**，可直接验证 API 26 基线能力（沉浸光感 `uiMaterial`）；
+  HarmonyOS 7.0.x = **API 26**，可直接验证 API 26 基线能力（沉浸光感 `uiMaterial`）；
   模拟器镜像在 `~/Library/Huawei/Sdk/system-image`（HarmonyOS-6.1.1 / 7.0.0）。
 
 ## 官方文档（devecocli docs 检索 ID）

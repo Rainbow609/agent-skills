@@ -21,8 +21,8 @@
 - 官方定义（意译）：不是光影特效升级，而是从"视觉层"到"感知层"的跃迁——界面元素是具备光学扩散与
   动态透光特性的数字介质，光感穿越层级、在层级间漫溢。用户侧有强/均衡（默认）/弱三档，系统自动映射，
   开发无需分档适配。
-- 材质 5 级与场景规范：顶部悬浮 `ULTRA_THIN` + 渐变模糊；底部 `THIN` + 渐变蒙层；
-  任意位置弹出 `THICK`；半模态与弹窗 `ULTRA_THICK`。
+- 材质 5 级：`ULTRA_THIN` / `THIN` / `REGULAR` / `THICK` / `ULTRA_THICK`；文档给出的场景规范：
+  顶部悬浮 `ULTRA_THIN` + 渐变模糊；底部 `THIN` + 渐变蒙层；任意位置弹出 `THICK`；半模态与弹窗 `ULTRA_THICK`。
 - 用法（API 26.0.0 起）：
   ```ts
   import { uiMaterial } from '@ohos.arkui.uiMaterial';
@@ -45,7 +45,7 @@
 | 定点刷新 `scheduledUpdateTime` | 精确到分钟（如 `"10:30"`），每天单点 | 配了它必须把 `updateDuration` 置 0（后者优先级更高） |
 | 多定点刷新 `multiScheduledUpdateTime` | API 18+，逗号分隔，**最多 24 个时间点/天** | 覆盖单定点；同样仅可见时触发 |
 | 条件刷新 `conditionUpdate: ["network"]` | 无网→有网触发 | API 18 字段（三方自 26.0.0 生效）；网络断开需连续 10 分钟才算无网；WiFi/流量互切不触发 |
-| 主动刷新 | `formProvider.updateForm`；API 22 起 UIAbility 可 `reloadForms` / `reloadAllForms` | 需应用在前台运行 |
+| 主动刷新 | `formProvider.updateForm`；API 22 起 UIAbility 可 `reloadForms` / `reloadAllForms` | `updateForm` 可在 FormExtensionAbility 回调中调用；`reloadForms`/`reloadAllForms` 仅限 UIAbility 主进程，需应用进程存活（无“必须前台”前提） |
 
 **能否在高峰起止那一刻立即切换？** 可以做到**分钟级**，不是秒级事件驱动：
 把高峰边界（如 `09:00,12:00,14:00,18:00`）写进多定点刷新即可；若卡片不可见，则顺延到可见时统一刷新。
@@ -62,6 +62,8 @@
   锁屏 1×1（圆形）、1×2。**上架建议必含 2×2**。
 
 ### 设计规范（可直接当验收标准）
+
+> 说明：以下尺寸/颜色数值来自设计文档与本机实测；devecocli 离线库未收录硬性数值，引用前回官方设计文档复核。
 
 - 内容距边缘安全边距 **12vp**；设计预览圆角 1×2 / 2×2 = **18vp**、2×4 / 4×4 = **22vp**；
   **交付直角矩形**，由桌面宿主裁切；锁屏卡片裁圆形/胶囊。
@@ -105,8 +107,8 @@
   配套：需提交有效测试账号（1.21）；集成第三方登录 SDK 需在隐私政策逐一明示（7.2）。
   未检索到"禁止应用内网页登录第三方账号"的条款——限制点在"必须同时给华为账号入口"。
 - 不内嵌的替代路径：
-  - **App Linking**（https + `domainVerify` 域名校验，App 未装则打开网页）或 **Deep Linking**（自定义 scheme，
-    不能以 `ohos` 开头）；可用 `canOpenLink` 预判，`querySchemes` 上限 API 20 及以前 50 个、API 21+ 200 个。
+  - **App Linking**（https + `domainVerify` 域名校验，App 未装则打开网页）或 **Deep Linking**（自定义 scheme）；
+    **Deep Linking 可用 `canOpenLink` 预判；App Linking 不支持 `canOpenLink` 判断**。`querySchemes` 上限 API 20 及以前 50 个、API 21+ 200 个；自定义 scheme 命名官方仅要求不与系统应用重复（“不能以 ohos 开头”未在离线库检索到，存疑）。
   - **OAuth device flow**：REST + INTERNET 权限即可，应用内展示 code 并轮询，不需要 Web。
 
 ### 结论：哪些场景必须内嵌浏览器

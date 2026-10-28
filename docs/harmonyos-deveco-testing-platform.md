@@ -3,10 +3,11 @@
 > 适用前提：回答「DevEco Testing 平台能做什么、怎么用命令行跑性能/稳定性/预检测试、
 > 自定义性能脚本（hypium-perf）怎么写」。安装与环境配置见 `harmonyos-deveco-testing-hypium-setup.md`。
 > 核实自官方知识库《命令行执行测试》《性能测试》《自定义性能脚本测试（基于Python）》
-> 《HarmonyOS 开发者测试服务概述》（devecocli docs，2026-10-16；命令行章节 2026-10-20 复核），
+> 《HarmonyOS 开发者测试服务概述》（devecocli docs，2026-10-16；命令行章节 2026-10-20 复核；
+> 两篇 Python 指南的 API/参数 2026-10-28 按 doccenter-testing 原文复核），
 > 并经本机原型实测；Console 章节的 26.0.0.500 行为为 2026-10-20 实机验证。
 
-## 平台服务全景（客户端五大测试服务 + 工具）
+## 平台服务全景（命令行覆盖的 5 类服务 + 工具；客户端另有探索/回归/性能指标监控等卡片）
 
 DevEco Testing 客户端（Windows/Mac，需华为账号登录；首次启动须联网，可开「登录状态保活」7 天免登）
 把测试能力做成服务卡片，一键执行。从 5.1.5.200 起只支持 HarmonyOS NEXT 设备。
@@ -21,8 +22,7 @@ DevEco Testing 客户端（Windows/Mac，需华为账号登录；首次启动须
 
 实用工具：设备投屏、UIViewer（控件透视）、应用图谱管理、性能报告自动分析/对比。
 报告可导出 IDE 体检文件导入 DevEco Studio AppAnalyzer 诊断（DevEco Studio 6.0.0 Beta3+）。
-指标口径（性能基础质量测试）：点击响应时延=离手→界面变化；完成时延=界面变化→占位符加载完成；
-卡顿率=累计丢帧时间/动效时长；视频卡顿=卡顿时长>100ms 记 1 次。
+指标口径（性能基础质量测试）：点击响应时延=点击离手→界面变化；点击完成时延=点击离手→转场页面所有占位符加载完成；加载完成时延=应用首页铺满全屏→首页所有占位符加载完成；卡顿率=累计丢帧时间/动效时长；视频卡顿=卡顿时长>100ms 记 1 次。
 
 🌟 **被测设备预置要求**（快速上手文档，客户端服务通用）：HarmonyOS 5.0+；取消锁屏密码
 （自动化靠上滑解锁）；应用图标放桌面可见（会翻页查找但**不进文件夹**）；预授权权限、
@@ -164,7 +164,8 @@ DevEcoTestingConsole.sh -params <json> -cleanupPolicy 30d  # 任务后保留 30 
 
 ## hypium-perf 自定义性能脚本（场景化性能测试的脚本侧）
 
-依赖安装（与 hypium 本体分开，从客户端「场景化性能测试」卡片获取安装包，**版本与 hypium 配套**）：
+依赖安装（与 hypium 本体分开，从客户端「场景化性能测试」卡片获取安装包，**版本与 hypium 配套**）。
+环境要求：Windows 10/11 64 位或 macOS 13+；内存建议 16GB+（可用 >8GB）；可用磁盘 100GB+。
 
 ```bash
 pip install hypium-<版本>.tar.gz
@@ -183,6 +184,19 @@ pip install perf_analyzer-*.whl perf_collector-*.whl perf_common-*.whl perf_reso
 
 场景 tag 类型 `SceneType`：`COLD_START`（前需杀后台）/ `HOT_START`（前需拉起置后台）/
 `WITH_PAGE_SWITCH` / `NO_PAGE_SWITCH`（滑动与无页面切换不测完成时延）/ `PLAY_VIDEO` / `WATCH`。
+
+`create_tag` 常用参数（前两个必填）：
+
+| 参数 | 作用 |
+| --- | --- |
+| `step_name` / `scene_type` | 步骤名 / SceneType |
+| `wait_time` | 增加采集时长，避免动效没采全 |
+| `is_watch` | WATCH 场景观看 30s |
+| `is_seek` | 标记进度条操作 |
+| `is_short_video` | 短视频（时长 <5 分钟） |
+| `need_wait_scene` | False 时跳过预置等待 |
+| `ad_monitor` | COLD_START 场景检测广告 |
+| `cold_start_wait_time` / `pop_up_window_enable` | 仅 COLD_START：额外等待 / 弹窗检测 |
 
 常用 `_perf` 接口（driver 为 `IDriverPerf`）：`touch_perf` / `long_touch_perf` / `double_touch_perf` /
 `swipe_perf`（不精准滑动，distance 1-100） / `slide_perf`（精准滑动）/ `drag_perf` / `swipe_to_back_perf` /
@@ -207,11 +221,26 @@ HypiumProjectTemplate.zip，结构 `aw/`（自定义模块）+ `config/user_conf
 - 执行：跑 `main.py`，或 xdevice 命令 `run -l <用例>[;用例2] -sn <sn> -rp <报告路径>
   -ta screenshot:true`；报告默认落**项目根 `reports/`** 时间戳子目录（gitignore 记得盖）。
 - API 面：BY 选择器（text/type/key + `MatchPattern`，含 before/after/in/within 包名）、
-  图像识别 `matchTemplate`+sift、窗口 `find_window`、多指 `gesture`、鼠标/键码、
-  `install/uninstall`、文件 push/recv、输入框输入/清空、断言 `host.check_*` /
-  `check_component_exist` / `assert_picture_*` / 控件属性断言。
+  图像识别 `check_image_exist`（template/sift）、窗口 `find_window`、多指 `gesture`、鼠标/键码、
+  `install_app/uninstall_app`、文件 push/recv、输入框输入/清空、断言 `host.check_*` /
+  `check_component_exist` / `check_image_exist` / 控件属性断言。
 - 🌟 **遥测开关**：`python -m hypium telemetry disable`（-enable 恢复）——官方收集设备型号/
   系统版本/包名/特性触发次数；POC 时见到的 telemetry ValueError 刷屏即来自它，可关。
+
+### Python Hypium API 速查（官方 2026-10-28 复核）
+
+设备相关四类：`UiDriver`（入口）/ `BY`（选择器）/ `IUiComponent`（控件对象）/ `UiWindow`（窗口对象）；
+设备无关两类：`host`（值断言、PC shell）/ `CV`（图像）。常量 `KeyCode` / `UiParam` / `MatchPattern`，
+类型 `Point` / `Rect`。
+
+- 定位优先级：控件属性（text/key/type/id，含前缀、before/after、inside、包名）> 图片匹配 > 比例坐标。
+- 断言：`host.check_equal` / `check_greater`；`driver.check_component_exist(component, wait_time, scroll_target)`；
+  `check_component(component, id/text/key/type/enabled/focused/clickable/scrollable/checked/checkable)`；
+  `check_image_exist(image_path_pc, similarity=0.95, timeout=3, mode=template|sift, min_match_point=16)`；
+  `check_window(WindowFilter(...), title, bundle_name)`。
+- 图片模板匹配要求模板图与屏幕截图中目标分辨率一致；sift 对分辨率/旋转更宽容，但难处理纯色、无线条图片。
+- 日志 `Step` / `CheckPoint` / `MESSAGE` 会进测试报告；资源路径 `file_util.get_resource_path("x", isdir=False)`。
+- 用例 `.py` 不能直接运行，必须由框架按同名 JSON 加载执行。
 
 ## 🌟 本机原型实测（2026-10-16，manbo-reader 工程）
 
@@ -239,6 +268,7 @@ hypium-perf 本体依赖 DevEco Testing 客户端（安装包从客户端服务�
 - 性能测试（服务口径）：`开发指南/专项测试/DevEco_Testing/性能测试/performance-testing`
 - 自定义性能脚本测试（基于Python）：`开发指南/单元测试和UI测试/自定义性能脚本测试_基于Python/hypium-perf-python-guidelines`
 - 应用UI测试（基于Python，用例工程/API 全集）：`开发指南/单元测试和UI测试/应用UI测试_基于Python/hypium-python-guidelines`
+- 网页原文：[应用UI测试（基于Python）](https://developer.huawei.com/consumer/cn/doc/doccenter-testing/hypium-python-guidelines)、[自定义性能脚本测试（基于Python）](https://developer.huawei.com/consumer/cn/doc/doccenter-testing/hypium-perf-python-guidelines)
 - 测试服务总览：`开发指南/HarmonyOS_开发者测试服务概述/app-testing-overview`
 - 快速上手（设备预置/环境要求）：`开发指南/专项测试/DevEco_Testing/快速上手/get-familiar`
 - 🌟 `docs read` 需要**完整 documentId**（用 `docs search --format json` 拿 `documentId` 字段，路径分段与网页 URL 不同）

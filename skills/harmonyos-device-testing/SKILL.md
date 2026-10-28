@@ -10,7 +10,7 @@ description: HarmonyOS/鸿蒙应用真机与模拟器自动化测试最佳实践
 ## 0. 路径与环境（macOS）
 
 - Emulator CLI：`/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`
-- hdc：`/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/toolchains/hdc`（不在 PATH）
+- hdc：优先用 PATH 中的 CLT 版本（`~/Library/Huawei/command-line-tools/sdk/default/openharmony/toolchains/hdc`）；DevEco 内置副本在 `/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/toolchains/hdc`
 - HVD root：`$HOME/.Huawei/Emulator/deployed`；镜像：`$HOME/Library/Huawei/Sdk`
 - 模拟器上线后 target 为 `127.0.0.1:5555`；多设备一律显式 `-t <target>`（真机无线调试形如 `192.168.x.x:port`，不要误选）
 - 构建命令与签名坑见项目 AGENTS.md（hvigorw 内置版、build-profile.json5 skip-worktree）
@@ -25,10 +25,10 @@ hdc -t <target> shell param get bootevent.boot.completed   # true 才算就绪
 Emulator -stop "Pura 90 Pro"                     # 停止（幂等，复查 pgrep）
 ```
 
-- 启动完整模板（playbook 版）：`-hvd <名> -path <HVD root> -t <trace名> -imageRoot <sdk>`；裸 `-start` 曾可用，若启动后弹"请登录华为账号"模态框＝启动路径不完整的症状，不要引导用户登录，先补全参数。
+- 启动模板：`Emulator -start "<名>" [-instancePath "$HOME/.Huawei/Emulator/deployed" -imageRoot "$HOME/Library/Huawei/Sdk"]`；旧版参数 `-hvd/-path` 仍可用，`-t` 未在官方帮助中出现。若启动弹「请登录华为账号」：官方明确要求登录的模拟器版本无法用命令行启动，需在 DevEco Studio 界面启动，不要引导用户补参数硬绕。
 - 冷启动 25-60s；每条命令都要设超时；`hilog` 不带 `-z/-x` 会挂住终端。
-- 应用启动：`hdc -t <t> shell aa start -b <bundle> -a EntryAbility`；停止：`aa force-stop <bundle>`；覆盖装：`hdc -t <t> install -r <hap>`（保留数据）。
-- 前台是什么：`hdc shell aa dump -l`；应用信息：`bm dump -n <bundle>`。
+- 应用启动：`hdc -t <t> shell aa start -b <bundle> -a EntryAbility`；停止：`aa force-stop <bundle>`；覆盖装：`hdc -t <t> install -r <hap>`（实测保留数据；官方仅写覆盖安装）。
+- 前台是什么：`hdc shell uitest dumpLayout`（读 root 节点 bundleName/abilityName；`aa dump -l` 只反映最近运行应用且 dump 自 API 9 废弃）；应用信息：`bm dump -n <bundle>`。
 
 ## 2. uitest CLI（uiInput 注入语义）
 
@@ -44,7 +44,7 @@ Emulator -stop "Pura 90 Pro"                     # 停止（幂等，复查 pgre
 | 拖拽 | `drag x1 y1 x2 y2 [speed]` | |
 | 定向快滑 | `dircFling [0左/1右/2上/3下] [speed] [stepLength]` | 屏幕级滑动，无需坐标 |
 | 输入 | `inputText x y text` | 文本需 shell 转义 |
-| 按键 | `keyEvent Home|Back|<keycode>` | |
+| 按键 | `keyEvent Home / Back / <keycode>` | |
 
 布局/截屏：
 
@@ -68,7 +68,7 @@ hdc file recv /data/local/tmp/x .tmp/x                   # 取回（-t <target>�
 
 ## 4. E2E 流水线配方（无测试套件项目）
 
-1. `install -r` 覆盖装（保留书架/设置数据）→ `aa start` → 轮询前台 `aa dump -l`。
+1. `install -r` 覆盖装（保留书架/设置数据）→ `aa start` → 轮询前台 `uitest dumpLayout`（读 root 节点 bundleName/abilityName）。
 2. 每个验证步骤：dumpLayout 拿元素 → uiInput 驱动 → snapshot/截图取证 → 断言文本/bounds（python 解析 d.json）。
 3. 等待网络加载类页面给足 sleep（2-4s）；换话/切章节后截两张（间隔 2s）防误判加载中。
 4. 日志取证：`hdc shell "hilog -x | grep -E '<TAG>'"`（-x 打完即退）。
@@ -80,7 +80,7 @@ hdc file recv /data/local/tmp/x .tmp/x                   # 取回（-t <target>�
 更稳的进阶路线（控件级定位，无需坐标运算，用例失败自动截图+dumpLayout，hypium ≥1.0.28）：
 
 - 写 `entry/src/ohosTest/ets/test/*.test.ets`：`import { abilityDelegatorRegistry, driver, ON, Component } from '@kit.TestKit'`；`const driver = driver.create()`；`driver.findComponent(ON.id('xxx')).click()`、`driver.swipe(x1,y1,x2,y2)`、`driver.fling({from},{to},speed)`、`driver.assertComponentExist(ON.text('x'))`。
-- 运行：`hdc shell aa test -b <bundle> -m <module_test> -s unittest OpenHarmonyTestRunner -s class <Suite> -s timeout 15000`；或 hvigor `test@Task`。
+- 运行：`hdc shell aa test -b <bundle> -m <module_test> -s unittest OpenHarmonyTestRunner -s class <Suite> -s timeout 15000`；或 `hvigorw test`（Local）/ `hvigorw onDeviceTest`（设备）。
 - ⚠️ 需要新建 ohosTest 模块/目录（本项目当前无测试套件，属结构性新增，先征得用户同意）。
 - UiTest 使能：OpenHarmony 4.0+/API 10+ 默认使能，无需 testmode 参数。
 
@@ -156,5 +156,5 @@ trace 关键字速查（直接搜）：
 
 - arkxtest：github.com/openharmony/testfwk_arkxtest（JsUnit/UiTest/PerfTest + 中文使用指导）
 - 鸿蒙 HDC 命令合集：github.com/codematrixer/awesome-hdc
-- DevEco 模拟器自动化 playbook / API 离线参考：**已装 `~/.agents/skills/harmony-next`**（linhay/harmony-next.skills v1.3.37，经 gh-proxy.com 镜像克隆；含 scripts/hvd_manager.py 模拟器预检启动、device_ui_action.py UI 动作封装）
+- DevEco 模拟器自动化 playbook / API 离线参考：**已装 `~/.agents/skills/harmony-next.skills`**（技能名 `harmony-next`；linhay/harmony-next.skills v1.3.37，经 gh-proxy.com 镜像克隆；含 scripts/hvd_manager.py 模拟器预检启动、device_ui_action.py UI 动作封装）
 - 华为侧 agent 技能集合：atomgit.com/HarmonyOS_Skills/harmonyos-agent-skills

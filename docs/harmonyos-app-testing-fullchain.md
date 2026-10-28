@@ -198,7 +198,7 @@ export default function loginUiTest() {
 其他官方可用的匹配器与动作：`ON.text()`、`ON.type()`、`ON.id()`、
 `ON.isBefore()/isAfter()/within()`、`driver.findComponents()`、`driver.swipe()/fling()/drag()`、
 `Component.pinchOut()`、`Component.inputText()`、`driver.pressBack()`、
-`driver.screenCapture(savePath, rect?)`。`ON.key()` 从 API 9 起已废弃，改用 `ON.id()`。
+`driver.screenCapture(savePath, rect?)`。`ON.key()`（底层 `By.key`）从 API 9 起已废弃，改用 `ON.id()`。
 
 ### 3.4 高频坑
 

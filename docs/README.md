@@ -13,7 +13,7 @@
 | `kimi-code-agent-tools-whitelist.md` | Kimi Code 子代理 tools 白名单（必须用 Kimi Code 工具名） | 通用 | 2026-10-15 |
 | `tag-based-release-workflow.md` | tag 唯一版本源：打 tag 之后的开发与版本演进 | manbo-reader 实践 | 2026-10-15 |
 | `harmonyos-app-continuation.md` | HarmonyOS 应用接续：接入要点、硬数据、生命周期坑、调试配方 | manbo-reader 调研 | 2026-10-16 |
-| `harmonyos-deveco-testing-platform.md` | DevEco Testing 平台全景与 Console 命令行：五大服务、五类 CLI 服务参数、并发/错误码、`2d_report_data.json` CI 判定、本机 26.0.0.500 实测 | 官方文档 + 本机客户端实测 | 2026-10-16（10-20 增补） |
+| `harmonyos-deveco-testing-platform.md` | DevEco Testing 平台全景与 Console 命令行：五大服务、五类 CLI 服务参数、并发/错误码、`2d_report_data.json` CI 判定、Python Hypium UI 工程/API 速查、本机 26.0.0.500 实测 | 官方文档 + 本机客户端实测 | 2026-10-16（10-20 增补，10-28 补 Python API） |
 | `harmonyos-deveco-studio-cli.md` | 鸿蒙命令行工具链：DevEco 内置 vs 官方 CLT 定位、官方 CLT 26.0.0.851 安装与 PATH、hvigorw 参数/构建配方、codelinter 门禁、hstack 6.1.0 差异、本机实测 | 官方文档 + 本机 26.0.0.851 实测 | 2026-10-20 |
 | `agents-md-best-practices.md` | AGENTS.md 写作与分层：8 工具加载机制对照、长度红线、量化证据、写/不写清单与维护流程 | 本体系实践 + 官方与社群调研 | 2026-10-16 |
 | `agents-md-and-skills-tooling.md` | AGENTS.md / Skills 工具生态：同步器/linter/优化器/eval 的成熟度实测、社群失败案例、最小工作流与「上游 skill-creator 补齐」行动计划 | 本体系实践 + GitHub/npm/社群调研 | 2026-10-16 |
@@ -40,6 +40,16 @@
 | `behavioral-stream-market-structure-paper.md` | 行为流视角产品动态竞争市场结构（博士论文）：产品级行为变量、5 天记忆窗口的 CBBI 贝叶斯回归、K-means/MDS 全局子市场、考虑集共现网络局部竞争；含主要系数、份额结果、数据与因果识别局限 | 广东工业大学管理学博士论文（詹明君，2020，164 页）逐章精读，关键页抽查 | 2026-10-23 |
 | `statistical-learning-methods-lihang.md` | 李航《统计学习方法》章节速查：三要素与泛化上界、感知机/kNN/朴素贝叶斯/决策树/LR/最大熵/SVM/提升/EM/HMM/CRF 的模型-策略-算法-凸性，生成 vs 判别、损失函数对照、按场景选型与常见误区 | 清华大学出版社 2012 年第 1 版（245 页）逐章精读后压缩，公式为摘要 | 2026-10-23 |
 | `harmonyos-app-testing-fullchain.md` | 鸿蒙应用测试全链路：白皮书五层能力、单元/UI 测试真实 API 与命令行、模拟器/真机/云测边界、分布式最终一致性与订阅语义；含知乎文章 18 条断言核验与纠错 | 知乎文章 + 鸿蒙生态测试白皮书 + 官方指南/API + devecocli 离线文档库（2026-10-27） | 2026-10-27 |
+| `harmonyos-abilitykit-quickref.md` | AbilityKit 速览与模拟器能力差异：应用模型定位、四大使用场景、能力边界与「去哪查」导航 | 官方知识库《Ability Kit简介》（devecocli docs） | 2026-10-16 |
+| `harmonyos-arkts-arkui-essentials.md` | ArkTS/ArkUI 体系速览：三者关系、能力分层、文档地图、模拟器差异、TS→ArkTS 适配入口 | 官方知识库《ArkTS简介》《ArkUI简介》+ 概念关系 FAQ | 2026-10-16 |
+| `harmonyos-deveco-testing-hypium-setup.md` | DevEco Testing Hypium（Python UI 自动化）：与 @ohos/hypium 辨析、组件与版本配套、PyPI/华为云镜像安装实测 | 官方《应用UI测试（基于Python）》+ 下载中心 + PyPI/镜像实查 | 2026-10-16 |
+| `harmonyos-knowledge-retrieval.md` | 鸿蒙知识检索链路：四轨优先级、devecocli docs 全文与 Context7 双通道、实测验证 | 本体系实践 + Context7 实查 | 2026-10-16 |
+| `harmonyos-multi-device-oneapp.md` | 一次开发多端部署：三层工程架构、断点体系、阅读类应用官方样例配方 | 官方知识库《一次开发多端部署概览》《多设备新闻阅读界面》 | 2026-10-16 |
+| `harmonyos-system-test-tools.md` | 鸿蒙零客户端测试工具箱：WuKong 稳定性压测 + SP_daemon 性能/时延采集（参数总表、CSV 字段与单位、前置约束、客户端能力边界） | 官方《wukong稳定性工具使用指导》《HiSmartPerf_Device性能使用指导》原文逐节复核 | 2026-10-16（10-28 补齐参数/字段/约束） |
+| `harmonyos-unit-testing.md` | HarmonyOS 单元测试（Hypium/arkxtest）：arkxtest 四件套索引、Local Test vs Instrument Test、命令行执行、可测范围与踩坑 | 官方文档 + 《鸿蒙生态测试白皮书》+ 开源仓库实文件 | 2026-10-16（10-28 补 arkxtest 索引） |
+| `harmonyos-architecture-layered-modular.md` | 鸿蒙应用架构：三层分层（产品定制/基础特性/公共能力）与依赖方向、单/多 HAP 选型、HAR/HSP/Feature HAP 取舍、HSP+HAR 同引 HAR 的单例失效与官方启动实测 | 官方最佳实践《分层架构设计》《模块化设计》原文逐节复核 | 2026-10-28 |
+| `harmonyos-privacy-data-security.md` | 鸿蒙隐私与数据安全：六原则、模糊定位权限矩阵、Picker/动态权限、设备 SL1–SL5 与数据 S1–S4、跨设备同步矩阵、el1–el4、HUKS AES 配方与体检数据二次加密 | 官方最佳实践《应用隐私保护》《应用数据安全》原文逐节复核 | 2026-10-28 |
+| `harmonyos-ci-automation.md` | 鸿蒙 CI 自动化：官方构建/测试/检查命令基线、报告产物路径、失败策略、覆盖率、设备供给，附两篇社区博客 15 条命令/结论纠错 | 华为云社区博客（Jack20，2026-06-24）+ 官方文档/devecocli 离线库复核 | 2026-10-28 |
 
 ## 知识同步约定（防偏移 / 毒化 / 遗漏）
 
