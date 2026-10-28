@@ -29,12 +29,13 @@
 
 - 包内 README 原文：> `DevEco CLI` 将 `DevEco Studio` 工具链统一封装为一个 `CLI`，内置 `ohpm`、`hvigor`、`hdc`、`emulator`、`hilog`，同时集成 HarmonyOS 技能安装、项目脚手架、本地 HarmonyOS 文档检索和 `MCP` 服务。
 - MCP 形态：`devecocli serve mcp` 起 stdio server（服务器自名 `devecocli-mcp-server`），
-  工具面偏代码理解——`check`（ArkTS/C++ 静态分析）、`check_cpp_files`，以及 LSP 语义类
-  `definition` / `declaration` / `hover` / `references` / `implementation`；
-  构建 / 装机 / 模拟器 / 日志留在 CLI 子命令层。
-- 官方两条硬提示（原文）：> **注意：不要把 `serve lsp` 与 `devecocli serve mcp` 同时接入同一个智能体。** 两者会各自拉起一份 ace-server/clangd 实例，内存翻倍。请在直连 LSP 与 MCP 中二选一，**推荐 MCP**——接入更简单，且自带初始化。
-- 前置要求：**DevEco Studio ≥ 6.0.0、Node ≥ 22**；npm 包 MIT，1.3.5，近 30 天 15,099 下载（鸿蒙类最高）；
-  wrapper 包仅 2.8KB，真实现在平台子包 `@deveco/deveco-cli-common`（macOS/Linux/Windows）与
+  工具面偏代码理解。官方文档列 9 个：`check`（静态分析）/ `hover` / `definition` / `declaration` /
+  `references` / `implementation` / `workspaceSymbol` / `documentSymbol` / `callHierarchy`；
+  本机 `tools/list` 另有 `restart`（共 10 个）。构建 / 装机 / 模拟器 / 日志留在 CLI 子命令层。
+- 经验提示：不要把 `serve lsp` 与 `devecocli serve mcp` 同时接入同一个智能体——两者会各自拉起一份 ace-server/clangd 实例，内存翻倍；请在直连 LSP 与 MCP 中二选一，推荐 MCP。
+- 前置要求：**DevEco Studio 26.0.0 Release+、DevEco CLI 1.3.0+、Node ≥ 22**；
+  npm 包 MIT，截至 2026-10-28 最新 **1.3.9**（2026-10-16 快照为 1.3.5，近 30 天 15,099 下载）；
+  真实现在平台子包 `@deveco/deveco-cli-common`（macOS/Linux/Windows）与
   `@deveco/deveco-cli-openharmony-arm64`（供 OpenHarmony 设备侧运行）。
 - 主仓：gitcode.com/openharmony-sig/deveco-cli（官方 SIG 组织）。
 
@@ -43,7 +44,7 @@
 - 出处：鸿蒙生态测试白皮书「功能场景测试 → Hypium设备测试MCP工具」章节
   （`guidebook/hoetwp-capability-functiontest3-0000002594762528`，章节更新 2026-06-12），
   定位 = 标准 MCP 协议封装 Hypium 设备测试能力，供 AI Agent 驱动真机/模拟器执行测试。
-- 工具面（白皮书列 27 个，按模块）：basic（start_app/stop_app/double_click）、screen（unlock_screen/
+- 工具面（白皮书列 30 个，按模块）：basic（start_app/stop_app/double_click）、screen（unlock_screen/
   screen_on/rotate_screen）、app_manager（install_app/uninstall_app/get_current_app）、toast
   （start_listen_toast/get_toast）、general_gesture（pinch_in/pinch_out/rotate_gesture）、system_gesture
   （open_notification_center/enter_recent_task/drag_to_xiaoyi）、observation（screenshot 仅 jpg/layout/
@@ -105,7 +106,8 @@ glama.ai 收录最多（十余条）；smithery.ai 零结果；awesome 列表与
 ### 4.1 零依赖兜底：官方 CLT / DevEco 自带控制面
 
 - **`Emulator` 二进制**（官方 CLT：`~/Library/Huawei/command-line-tools/bin/Emulator`；
-  DevEco 内置：`/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`）：`-start/-stop/-list/-create/-delete`（镜像）、
+  DevEco 内置：`/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`）：`-start/-stop/-list`（实例生命周期）、
+  `-create/-delete`（实例创建/删除）、`-imageList/-install/-uninstall`（镜像）；
   `-instance <name>` 下的 `-screenshot/-screenshotPath/-uiLayout/-click/-slide/-fill/-power/-volume/-rotation`、
   `-hdcPort/-hvd/-logZip`——模拟器启停、截图、UI 布局、点击滑动的原子命令全在。
 - **`hdc`**（官方 CLT：`~/Library/Huawei/command-line-tools/sdk/default/openharmony/toolchains/hdc`，本机已在 PATH；
@@ -113,7 +115,7 @@ glama.ai 收录最多（十余条）；smithery.ai 零结果；awesome 列表与
 - **设备侧 `uitest` / `aa`**：`screenCap -p`、`dumpLayout`、`uiInput click/inputText/...`、`aa start`，模拟器与真机通用。
 - **DevEco Studio 自带 JetBrains MCP Server 插件**（`Contents/plugins/mcpserver/lib/mcpserver.jar`，
   插件 id `com.intellij.mcpServer`）：可把 IDE 的构建 / run 配置暴露给外部 agent。
-- 已知模拟器坑：首次冷启动可能 >60s；只接受 debug 签名 HAP；`uitest dumpLayout` 会隐藏软键盘正下方节点；
+- 已知模拟器坑：首次冷启动可能 >60s；模拟器大多不需要签名，但部分 Kit 仍需签名（官方 FAQ `faqs-simulator-4`）；`uitest dumpLayout` 会隐藏软键盘正下方节点；
   `hdc list targets` 状态列会把部分已连接设备误报 `Offline`，判定可用性别只信状态列。
 
 ## 来源
@@ -125,4 +127,4 @@ glama.ai 收录最多（十余条）；smithery.ai 零结果；awesome 列表与
 | 仓库 star / 活跃度 / 归档状态 | gh api repos/callstack/agent-device、Eilgnaw/harmonyos-mcp、open-deveco/deveco-toolbox、XixianLiang/HarmonyOS-mcp-server、AlexGladkov/claude-in-mobile、mobile-next/mobile-mcp、Deslord319/harmonyos-dev-mcp、web-infra-dev/midscene（2026-10-16） |
 | Midscene MCP 退役声明 | https://midscenejs.com/mcp |
 | 注册表收录情况 | punkpeye/awesome-mcp-servers 与 modelcontextprotocol/servers 的 README grep；mcp.so / smithery.ai / glama.ai 检索（2026-10-16） |
-| 本机兜底控制面 | DevEco Studio 26.0.0.851：`Emulator --help`、`hdc -h`、设备侧 `uitest help` / `aa help`、`Contents/plugins/mcpserver/` 实测 |
+| 本机兜底控制面 | CLT 26.0.0.851 / DevEco Studio 26.0.0（build 2600851）：`Emulator --help`、`hdc -h`、设备侧 `uitest help` / `aa help`、`Contents/plugins/mcpserver/` 实测 |

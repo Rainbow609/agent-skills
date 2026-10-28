@@ -91,9 +91,9 @@ hdc shell aa start -b <bundleName> -a <abilityName> -c --ps <key> <value>
 - 失败排查：DistributedSchedule 错误码 `16300501`（系统服务异常），常见根因是软总线套接字权限。
 - 🌟 **恢复链三点日志二分**（「恢复到旧位置」一次定位源端旧还是对端旧）：源端阅读器发布（publish）/ 源端 `onContinue`（migrate）/ 对端打开（open）三条日志统一自定义 tag（如 `Continuation`），两台真机各拉一次快照即可对拍页码；`hilog -x` 是快照式拉取，比长驻日志流抗断连（无线调试易掉）。两台设备在同一局域网时 `hdc -t <ip:port> shell "hilog -x" | grep Continuation`。
 
-## 7. 存疑（引用前复核，勿当定论）
+## 7. 存疑与已核清（引用前复核）
 
-- `onContinue` 的 Promise 异步版本起点：接口参考页写 API 18、最佳实践页写 API 12——**官方自相矛盾**（2026-10-16 查）。
+- ✅ 已核清（2026-10-28）：`onContinue` 的 Promise 异步版本自 **API 18** 起支持（接口参考页）；最佳实践页当前只给 async 示例、未再标 API 12。引用以接口页为准。
 - 权限口径冲突：`free-flow-faqs-1` FAQ 仍按 API 11 及以前口径写「需申请 `DISTRIBUTED_DATASYNC`」。
 - 源端返回 `REJECT` 后的系统后续行为，官方未说明。
 - 跨 APPID 配置口径差：概述（`bpta-continue-cast`）要求 continueBundleName + continueType + AGC 接续服务申请；FAQ `free-flow-faqs-2` 同场景示例只突出 continueBundleName、**全程未提 AGC 申请步骤**——配置以概述为准，接续不生效时先补齐两字段再查申请状态。

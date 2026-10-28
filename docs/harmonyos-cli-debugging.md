@@ -36,7 +36,7 @@
 | hitrace | 系统/应用 trace 采集 | `hitrace -l` 列分类；`hitrace -b 204800 app graphic -t 10 -o /data/local/tmp/a.ftrace` |
 | hiperf | CPU 热点/火焰图 | `hiperf record --app <bundle> -d 10 -o /data/local/tmp/perf.data`；`hiperf report -i <data> --limit-percent 1` |
 | devicedebug | 向 debug 应用进程发信号 | `hdc shell devicedebug kill -<1-64> <pid>`；**仅 debug 类型进程**（非 debug 报 `is not debuggable app`） |
-| hstack | Native 崩溃栈解析（仅 CLT 有） | BuildID+符号解析 cppcrash；6.1.0 起支持单文件直传（版本差异见 deveco-studio-cli 篇） |
+| hstack | Native 崩溃栈解析（仅 CLT 有） | BuildID+符号解析 cppcrash；CLT 26.0.0（hstack 6.1.0）起支持单文件直传（版本差异见 deveco-studio-cli 篇） |
 | hvigorw / ohpm | 构建/依赖 | 见 `harmonyos-deveco-studio-cli.md`，不在此重复 |
 
 ## 场景配方
@@ -46,9 +46,9 @@
 - 前置：设备开开发者选项 + USB/无线调试（官方 ide-developer-mode）；无线 `hdc tconn <IP>:<port>`。
   🌟 多设备一律显式 `-t <target>`；hdc 服务异常先 `hdc kill -r`。
 - 装包：HAP 必须已签名（命令行签名材料与门槛见 `harmonyos-deveco-studio-cli.md`）；
-  `hdc install -r <hap>` 覆盖安装保留数据。
+  `hdc install -r <hap>` 覆盖安装（官方只写覆盖安装，未说明是否保留数据）。
 - 拉起/停止：`aa start -b <bundle> -a <Ability>`（目标 Ability `exported != false`）；
-  `aa force-stop <bundle>`；前台是什么 `aa dump -l`；应用信息 `bm dump -n <bundle>`。
+  `aa force-stop <bundle>`；前台是什么 `hdc shell uitest dumpLayout`（读 root 节点 bundleName/abilityName；`aa dump -l` 只反映最近运行应用且 dump 自 API 9 废弃）；应用信息 `bm dump -n <bundle>`。
 - 日志：`hilog -T <tag> -L <level> -D <domain>` 精确过滤，忌全量刷屏；🌟 默认**不落盘**，
   留存先 `hilog -w start`；交互 shell 不带 `-x`/`-z` 会挂住终端（打完即退用 `-x`）。
 - 调试等待态：`aa appdebug -b <bundle> -p`（挂起等调试器）、`aa attach` / `aa detach`；
@@ -69,10 +69,9 @@
 - trace：`hitrace -l` 选分类；帧分析五步法、trace 关键字速查（`H:ReceiveVsync` /
   `H:MarshRSTransactionData` / `FrameNode[..]::RenderTask` 等）与卡顿率口径（ms/s）见
   `skills/harmonyos-device-testing/` §6，不在此复制。
-- CPU 热点：`hiperf record --app <bundle>`（一般需 debug 签名；release profileable 支持**存疑**，
-  按系统版本实测）。
+- CPU 热点：`hiperf record --app <bundle>`（一般需 debug 签名；**API 26.0.0 起**支持开启 profileable 的 release 应用，API 24 起 PC 终端可采集）。
 - 内存：`hidumper --mem <pid>`（PSS）/ `--mem-smaps`；JS 堆 `hidumper --mem-jsheap <pid> --raw`
-  （需 debug 签名且亮屏）。
+  （需 debug 签名且亮屏；API 26.0.0 起 release 应用在 profileable + enterprise appDistributionType + 开发者模式下也支持）。
 - 启动耗时：`aa start ... -W`（API 20+，仅统计显式启动）。
 - 秒级 FPS/CPU/功耗采集与场景化卡顿率走 SP_daemon（`harmonyos-system-test-tools.md`）。
 
@@ -81,7 +80,7 @@
 - 构建机装官方 CLT（hvigorw/ohpm/hdc/hstack 统一 `bin`；Linux 建议 JDK 21/16GB 内存/100GB 磁盘），
   流水线与签名配方见 `harmonyos-deveco-studio-cli.md`。
 - 设备侧测试执行两条路：`hdc shell aa test -b <bundle> -m <module> -s unittest
-  OpenHarmonyTestRunner -s class <Suite> -s timeout 15000`，或 hvigor `test@Task`
+  OpenHarmonyTestRunner -s class <Suite> -s timeout 15000`，或 `hvigorw test`（Local）/ `hvigorw onDeviceTest`（设备）
   （arkxtest/hypium 写法见 `skills/harmonyos-device-testing/` §5 与 `harmonyos-unit-testing.md`）。
 - 收尾取证：faultlogger 目录差分 + hilog 过滤；无截图压测三源配方见
   `skills/harmonyos-device-testing/` §7。

@@ -87,3 +87,5 @@ pip install hypium -U --trusted-host mirrors.huaweicloud.com \
 [应用UI测试（基于Python）](https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/hypium-python-guidelines)
 ——含工程模板、UiViewer 功能区、用例执行与报告全流程；版本说明见
 [DevEco Testing 26.0.0 Release Notes](https://developer.huawei.com/consumer/cn/doc/harmonyos-releases/deveco-testing-releasenotes-2600)。
+
+脚本工程结构、API 速查与 hypium-perf 场景化性能脚本见 `harmonyos-deveco-testing-platform.md`。
