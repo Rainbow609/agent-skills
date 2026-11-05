@@ -29,4 +29,3 @@
 - 🌟 `git switch -c <branch> origin/main` 会自动 track 主分支——须 `git branch --unset-upstream`（防图形界面推送按钮把代码送进保护分支）。
 - 🌟 `apm deny` 即使 `--user`（写个人 `~/.apm/config.json`）也要求 **CWD 存在 apm.yml**，否则 exit 1 静默假失败——脚本内必须 `cd` 到含 apm.yml 的目录执行（install.sh 已修，PR #27 内 bc76eda）。
 - apm 对 opencode 是「部分支持」target（hooks 不注入；项目级 skills/instructions 可）——全局三面仍归 install.sh。
-- OpenSpec 的 opsx 命令/技能由 openspec CLI 自管（写入 `~/.opencode/{commands,skills}`），与本文的同步链并行，勿混装。

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 生成 APM 包的 symlink 视图（供 apm install 全量分发）：
-#   skills/            ← 根集合：自有 7 个为真实目录，其余 81 个技能以 symlink 指向 upstream/ 或 snapshot/
-#   .apm/agents        ← 目录 symlink 指向 agents/universal（12 个 .agent.md）
+#   skills/            ← 根集合：自有技能为真实目录，其余以 symlink 指向 upstream/ 或 snapshot/
+#   .apm/agents        ← 目录 symlink 指向 agents/universal（11 个 .agent.md）
 # 🌟 APM 发现规则（实测 apm v0.33.0）：
 #   ① 根 skills/ 存在时归类为 skill_bundle，只扫「直接子目录含 SKILL.md」一层（不递归、.apm/skills 被忽略）；
 #   ② symlink 条目会被跟随，但仅限指向包内（仓库内）路径，跨包根会拒绝。
