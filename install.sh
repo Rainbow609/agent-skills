@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 用户层技能 / 智能体 / MCP / 全局 AGENTS.md 装配脚本 —— 仓库为单一真源，幂等可重跑。
 # 🌟 上游技能已全量 vendor 进 upstream/（GitHub Actions 周更开 PR 同步），本仓库即唯一技能源；
-#    下游一条命令 npx skills add 本仓库即可获得全部 88 个技能。
+#    下游一条命令 npx skills add 本仓库即可获得全部 82 个技能。
 # Claude 侧 MCP 与 hooks 由 skillshare 托管（缺失时回退脚本内 jq 合并，见 ④⑤）。
 set -euo pipefail
 shopt -s nullglob
@@ -230,25 +230,6 @@ if [ -f "$ZCODE_AGENTS" ]; then
 fi
 cp "$REPO_DIR/AGENTS.md" "$ZCODE_AGENTS"
 log "AGENTS.md 已落盘 ~/.zcode/AGENTS.md"
-
-# ⑧ 斜杠命令落盘：OpenSpec opsx 命令（三工具各自格式，cp 只覆盖同名不删他命令）。
-if [ -d "$HOME/.zcode" ]; then
-  mkdir -p "$HOME/.zcode/commands/opsx"
-  cp "$REPO_DIR"/commands/zcode/opsx/*.md "$HOME/.zcode/commands/opsx/"
-  log "opsx 命令已落盘 ~/.zcode/commands/opsx/"
-fi
-if [ -d "$HOME/.claude" ]; then
-  mkdir -p "$HOME/.claude/commands/opsx"
-  cp "$REPO_DIR"/commands/claude/opsx/*.md "$HOME/.claude/commands/opsx/"
-  log "opsx 命令已落盘 ~/.claude/commands/opsx/"
-fi
-if [ -d "$HOME/.iflow" ]; then
-  cp "$REPO_DIR"/commands/iflow/opsx-*.md "$HOME/.iflow/commands/" 2>/dev/null || {
-    mkdir -p "$HOME/.iflow/commands"
-    cp "$REPO_DIR"/commands/iflow/opsx-*.md "$HOME/.iflow/commands/"
-  }
-  log "opsx 命令已落盘 ~/.iflow/commands/"
-fi
 
 # ⑨ 各 agent 的全局规则软链：Claude Code / Codex / opencode 复用 ~/.zcode/AGENTS.md 单一真源（幂等；真实文件先备份再替换）。
 for d in "$HOME/.claude" "$HOME/.codex" "$HOME/.config/opencode"; do

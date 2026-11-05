@@ -3,7 +3,7 @@
 > **来源**：官方一手文档/工程博客六家（Anthropic、OpenAI Codex、GitHub Copilot/Spec Kit、Cursor、Cognition、Google Jules/Gemini CLI）＋ 社区专家配方四家（Harper Reed、IndyDevDan、Geoffrey Huntley/Ralph、Matt Pocock）。2026-10-17 两轮并行子代理调研，全部结论带一手 URL。
 > **复核**：官方来源直读官方文档站/工程博客/官方仓库原文。两处官方站点不可访问已换一手替代源并核实：OpenAI 官方文档站 403 → 改用官方仓库系统提示原文（`codex-rs/core/gpt-5.2-codex_prompt.md`）；Gemini CLI 旧文档站 404 → 改用官方仓库 `docs/cli/plan-mode.md`。社区配方均为作者本人一手文章/仓库。
 > **适用前提**：2026-10 口径；各厂商产品形态迭代快，机制细节以届时官方文档为准。
-> **定位**：与 [`agents-md-best-practices.md`](./agents-md-best-practices.md)（规则文件写作）、[`matt-pocock-skills-guide.md`](./matt-pocock-skills-guide.md)（执行纪律层）、[`ai-coding-workflow-openspec.md`](./ai-coding-workflow-openspec.md)（工作流分级）互补——本文只回答一个问题：**主会话（主代理）作为规划者，业内公认它该做什么、不做什么、怎么做**。
+> **定位**：与 [`agents-md-best-practices.md`](./agents-md-best-practices.md)（规则文件写作）、[`matt-pocock-skills-guide.md`](./matt-pocock-skills-guide.md)（执行纪律层）互补——本文只回答一个问题：**主会话（主代理）作为规划者，业内公认它该做什么、不做什么、怎么做**。
 
 ## 1. 共识框架：规划者只做四件事
 
@@ -92,7 +92,7 @@ Jules：任务先产出可审批的 plan，"You can review and approve it before
 
 ## 6. 落地对照：本机体系覆盖度与增量清单
 
-本机既有体系（全局 AGENTS.md 的 orchestrator-worker 规则 + OpenSpec 权威计划层 + Matt skills 执行纪律层，结合模式见 [`openspec-matt-skills-combination.md`](./openspec-matt-skills-combination.md)）对四职责的覆盖：brief 四段≈四要素（③）、"回接核验强制"≈收口（④）、"规划与定案不外包"=各家共识中最独特也最正确的一条（①）、OpenSpec tasks.md≈书面计划（②）。**覆盖度高，真正的增量只有五条**：
+本机既有体系（全局 AGENTS.md 的 orchestrator-worker 规则 + Matt skills 执行纪律层）对四职责的覆盖：brief 四段≈四要素（③）、"回接核验强制"≈收口（④）、"规划与定案不外包"=各家共识中最独特也最正确的一条（①）、Matt 链路 to-spec/to-tickets 定稿产物≈书面计划（②）。**覆盖度高，真正的增量只有五条**：
 
 1. **Codex 计划三律**：把"跳过最简 25% 不排计划""每完成子任务即更新计划"写进规划规则——后者补上"计划是一次性文档"的隐含倾向。
 2. **评审负面清单**：给评审子代理显式指令"只报影响正确性或违反明确需求的项"——防审查者无限追 finding（#8）。

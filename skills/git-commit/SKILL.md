@@ -99,14 +99,6 @@ build > chore > refactor > fix > feat > test > docs
 
 ## 交互式提交流程
 
-### 步骤 0：openspec 工作流侦测
-
-```bash
-openspec list --json 2>/dev/null
-```
-
-命令失败（openspec 未安装或无 `openspec/` 目录）→ 跳过此检查。侦测到活跃变更时，读取 `references/openspec-integration.md`：依完成度判定表找出"已完成"的变更，按提示模板询问用户是否先归档（`/opsx-archive`），再继续正常流程。
-
 ### 步骤 1：扫描变更
 
 > 工作区干净且用户意在整理既有提交历史时，改走"提交历史重整（rebase 路线）"→ 见 `references/rebase-and-recovery.md`。
@@ -246,7 +238,6 @@ git remote
 
 ## 与其他技能的协作
 
-- **openspec 归档**：提交时侦测活跃 openspec 变更，提示用户先以 `/opsx-archive` 归档已完成的 change
 - **冲突解决**：提交或 rebase 过程遇到合并冲突时，hunk 解法（找意图、保双方、不发明新行为）遵循 `/resolving-merge-conflicts` 技能；rebase 机械操作见 `references/rebase-and-recovery.md`
 - **PR 描述生成**：整理完提交后，使用 `/git-pr-description` 生成 Pull Request 描述
 - **提交前审查**：由本技能"步骤 4 提交前审查闸门"执行——主代理快速走查，宿主支持时派发审查子智能体，按需加调 `/ponytail-review`
