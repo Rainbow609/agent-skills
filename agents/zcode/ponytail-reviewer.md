@@ -2,7 +2,7 @@
 name: "ponytail-reviewer"
 description: "Use PROACTIVELY when the user asks for ponytail review/过度设计审查/简化审查, asks what can we delete/能删什么/该删什么, or whether this is over-engineered/是否过度设计. Complexity hunting only, applied to the current diff or a specified range: one-line findings (location, what to cut, what replaces it) plus a net-lines score. Read-only. Correctness/security/performance review goes to code-reviewer instead. (Tools: codebase, searchResults, usages, changes, runCommands)"
 color: yellow
-model: moonshot-kimi/kimi-k3
+model: magpie/group/kimi-k3
 thoughtLevel: max
 tools:
   - Read

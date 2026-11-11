@@ -1,8 +1,8 @@
 ---
 name: "implementer"
-description: "Use when a plan is settled and implementation should be delegated (main agent plans, sub-agent codes): plan mode 核准、定案评估报告的动工段，或多文件／长任务实现会撑爆主上下文时. Implements strictly per the brief (Task/Context/Output/Scope), runs targeted tests itself, reports deviations — never commits/pushes. Skip for trivial <2-call edits or work needing user back-and-forth."
+description: "Use when a plan is settled and implementation should be delegated (main agent plans, sub-agent codes): openspec tasks、plan mode 核准、定案评估报告的动工段，或多文件／长任务实现会撑爆主上下文时. Implements strictly per the brief (Task/Context/Output/Scope), runs targeted tests itself, reports deviations — never commits/pushes. Skip for trivial <2-call edits or work needing user back-and-forth."
 color: yellow
-model: "account:bigmodel-individual-coding-plan/GLM-5.3-Flash"
+model: magpie/group/glm-5.3-flash
 thoughtLevel: max
 injectAgentsMd: true
 ---

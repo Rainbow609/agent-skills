@@ -2,7 +2,7 @@
 name: "code-reviewer"
 description: "Use PROACTIVELY when the user asks to review code/审查代码/审查改动/review 一下, right after completing a set of code changes, or before committing/opening an MR. Read-only quality review of working-tree changes (or a specified branch/commit range): findings ranked P0-P3 plus a verdict (可提交/建议修正后提交/需返工). Edits nothing. Narrow exception: formal Standards+Spec review against an issue is handled by the /code-review skill."
 color: yellow
-model: moonshot-kimi/kimi-k3
+model: magpie/group/smart
 thoughtLevel: max
 tools:
   - Read
