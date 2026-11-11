@@ -50,10 +50,10 @@ brief 四段：**Task**（一句话）/ **Context**（2-3 句，不含完整对�
 
 **编排模型（orchestrator-worker）**：主代理规划、定案与提交；子代理承接探索/实现/验证且只回摘要；审查与测试必委派；规划与定案不外包（子代理无法与用户互动）；前提是"自包含且能回摘要"，需频繁来回的任务留主对话。**回接核验（强制）**：实现类委派返回后，主代理须亲自走读关键 hunk、核验证据（构建/日志/复选框）才算完成——"报告完成"不是完成，"委派了测试"不等于"验证过"。**计划纪律**：最简/单步任务不排计划，计划随子任务完成即更新（不当一次性文档）；已定稿的实现不在原规划会话续写——委派 `implementer` 或新会话执行，防规划上下文被实现细节污染；脚本化编排时控制面归代码：顺序/重试/验收由脚本持有，跨阶段传结构化产物不传对话摘要。
 
-- **单一真源**：代理定义 / 用户层技能 / MCP 配置的真源是 `agent-skills` 仓库（github.com/Rainbow609/agent-skills）——代理改 `agents/zcode/`（.md）与 `agents/universal/`（.agent.md），技能改 `skills/`，MCP 改 `mcp/`，改后在该仓库跑 `./install.sh` 落盘（幂等）；上游技能 vendor 进仓库由 Actions 周更，勿直接改运行时目录（`~/.zcode/skills` 是 `~/.agents/skills` 的符号链接）；依赖项目 MCP 的代理仅在配置了该 MCP 的仓库可用。代理清单与触发条件以会话注入的 agent 列表及其 description 为准，本文件不枚举（枚举必腐化）。
+- **单一真源**：代理定义 / 技能 / 全局规则的真源是 `agent-skills` 仓库（github.com/Rainbow609/agent-skills）——代理改 `agents/zcode/`（.md）与 `agents/universal/`（.agent.md），技能改 `skills/`，规则改 `AGENTS.md`。落盘分工：技能 / MCP / 全局规则 / 子代理由 magpie Library 管理（技能与 MCP 改后 `magpie library sync`；规则另用 `magpie library instructions set AGENTS.md`；子代理在应用 Library → Subagents 维护，CLI 无此命令），仅 ZCode 子代理（magpie 的子代理目标不含 zcode）与 Claude settings/hooks 由 `./install.sh` 落盘（幂等）；仓库 `agents/universal/` 仅作存档与 magpie 导入源，`mcp/`、`agents/opencode/` 已随 APM 一起移除。上游技能 vendor 进仓库由 Actions 周更，勿直接改运行时目录（`~/.zcode/skills` 是 `~/.agents/skills` 的符号链接，`~/.agents/skills/*` 指向 magpie 库）；依赖项目 MCP 的代理仅在配置了该 MCP 的仓库可用。代理清单与触发条件以会话注入的 agent 列表及其 description 为准，本文件不枚举（枚举必腐化）。
 - **必须委派**（对应代理可用时）：广度探索；跨域深度调研；代码/安全/架构/过度设计审查（提交或开 MR 前）——评审子代理只报影响正确性或违反明确需求的项，防无限追 finding；测试执行（只要失败清单时；需亲自研判原始报错则留主代理）；鸿蒙设备/模拟器回归；调试排查；已落成书面产物的多文件落码 → `implementer`（不 commit/push，回来走审查）。
 - **默认允许**（无需请示；不可用时按只读调查自己跑）：日志/大输出分析（只回结论+关键片段+文件:行号）；多假设并行排查；多源并行调研；不相交文件上的同款检查/修改；长材料摘要蒸馏。
-- **技能与代理分流**：明确打出斜杠指令（如 `/ponytail-review`、`/diagnosing-bugs`）才走技能本体；自然语言请求一律派代理，不自行载入同名技能。
+- **技能与代理分流**：明确打出斜杠指令（如 `/ponytail-review`、`/diagnosing-bugs`）才走技能本体；自然语言请求一律派代理，不自行载入同名技能。技能可用性判定：先读会话注入的 magpie-skills 元技能清单（Library 技能统一挂其下），按清单给出的路径直读 SKILL.md，勿凭顶层目录 `ls` 判定「未安装」——路由化技能本就不是顶层 `/name` 命令（skill-router 设计如此）；需要斜杠调用的高频技能用 `magpie library skill router <name> direct` 豁免落盘。
 
 ## Git
 
@@ -73,10 +73,12 @@ brief 四段：**Task**（一句话）/ **Context**（2-3 句，不含完整对�
 
 1. **唯一通道** — 记忆只写 EverOS（本机服务；检索轨与回写配方以项目级 AGENTS.md 为准）。Memorix 与 `~/.zcode/cli/memories/`（zcode 内置记忆，已关闭）均弃用仅存档——不写、不同步
 2. **随手保鲜（双向）** — 会话产生值得跨会话保留的新定案/新事实（调研结论、环境变更、安装卸载、裁决拍板）时**当轮** `add_memory` 落库；发现已有条目过时（环境状态、待办完成、报错已修复等）立即更新。两个方向都不留"下次再说"（当前未建 hooks 兜底，靠本条执行）
-3. **跨项目知识入库** — 通用知识（工具配方、平台坑、官方结论）必须同步进 `agent-skills` 仓库 `docs/`（索引即其 `README.md`）作为跨项目真源：项目侧只留指针、不复制全文（防偏移）；入仓前回一手来源复核、未证实标「存疑」（防毒化）；新增/删除文档同 PR 更新索引（防遗漏）。改完仓库文件跑 `./install.sh` 落盘（幂等）
+3. **跨项目知识入库** — 通用知识（工具配方、平台坑、官方结论）必须同步进 `agent-skills` 仓库 `docs/`（索引即其 `README.md`）作为跨项目真源：项目侧只留指针、不复制全文（防偏移）；入仓前回一手来源复核、未证实标「存疑」（防毒化）；新增/删除文档同 PR 更新索引（防遗漏）。docs 入库即可，无需落盘；技能 / 规则等运行时的部署规则见上文「单一真源」
 
 ## Boundaries
 
 - ✅ **Always**：修改后运行项目测试验证；遵循项目级 AGENTS.md
 - ⚠️ **Ask first**：新增依赖、修改 CI/CD、数据库 schema 变更
 - 🚫 **Never**：提交 secrets；编辑 `.venv/`、`node_modules/` 或缓存目录
+
+@/Users/liangzongyou/.codex/RTK.md
