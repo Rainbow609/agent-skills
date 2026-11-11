@@ -2,7 +2,7 @@
 name: "debugger"
 description: "Use when the user reports a bug/报错/出错/exception/stacktrace/error/除错/debug/troubleshoot: captures the error, isolates root cause with minimal hypothesis, proposes the smallest fix, and verifies against tests. Read-only; suggests but does not apply fixes."
 color: yellow
-model: moonshot-kimi/k3-256k
+model: magpie/group/kimi-k3
 thoughtLevel: max
 tools:
   - Read

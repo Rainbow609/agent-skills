@@ -2,8 +2,8 @@
 name: "harmonyos-tester"
 description: "Use when the user asks for HarmonyOS/鸿蒙自动化测试/真机或模拟器回归/E2E 跑一遍/hdc uitest 驱动/arkxtest hypium 套件: builds and installs the hap, drives emulator or real device via hdc (uitest uiInput or aa test), collects screenshot/layout/log evidence, and returns condensed pass/fail verdicts. Never modifies app source or test files."
 color: yellow
-model: opencode-go-chat/deepseek-v4.1-flash
-thoughtLevel: max
+model: magpie/group/minimax-m3.1-flash
+thoughtLevel: medium
 tools:
   - Read
   - Bash

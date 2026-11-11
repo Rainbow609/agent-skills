@@ -2,6 +2,8 @@
 name: "test-runner"
 description: "Use when the user asks to run tests/跑测试/跑 pytest/回归测试 or wants pytest results interpreted: executes pytest from single file up to the full suite (~5-7 min), digests thousands of lines of raw output, and returns only pass/fail counts, the failing list, and root-cause clues."
 color: yellow
+model: magpie/group/glm-5.3-flash
+thoughtLevel: low
 tools:
   - Read
   - Bash
