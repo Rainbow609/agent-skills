@@ -58,7 +58,7 @@ grill-with-docs（驱动 grilling + domain-modeling）
 - **code-review**：双轴（Standards=仓库规范＋**Fowler 12 smell 基线**；Spec=忠实实现规格？）各跑一个互不污染的 subagent，**拒绝合并成单一结论**；每条发现必须带引用；Spec 轴找不到规格要明说 "no spec available" 而非编造需求。
 - **pr**：PR body 三件套——Summary（选**最小可视化**：伪代码/调用树/Mermaid/shaped diff，让评审者读 diff 前看到形状）＋Evidence（before/after 实证；「测试绿了」不算证据）＋**Merge Danger**（one-way/two-way door＋blast radius——把「能不能合」从直觉变成可反驳声明；**agent 自己打的 door 判定别盲信**，写代码的人在给自己打分）。
 - **retro**：改**环境**而非代码，只提议不擅改；机械违规→确定性检查（check 会 fail，句子不会）；评审规则写 `CODING_STANDARDS.md` 给 **reviewer 不给 implementer**（"standards belong to the reviewer"——实现者上下文压力最大）；**绝不往 AGENTS.md/CLAUDE.md 加规则**（每 session 载入、稀释、过时）。
-- **implement-spec**（implement 的并行替代）：每票一个 git worktree implementer subagent，按任务图 frontier 并行，逐个 fast-forward 合入单一 integration branch；与 subagent 通信用 **context pointers**（指路径不贴摘要）。坑：code-review 只能在全部票落地后跑一次；并行票碰同一文件要预先加 blocking edge。
+- **implement-spec**（implement 的并行替代）：每票一个 git worktree implementer subagent，按任务图 frontier 并行，逐个 fast-forward 合入单一 integration branch；与 subagent 通信用 **context pointers**（指路径不贴摘要）。坑：code-review 只能在全部票落地后跑一次；并行票碰同一文件要预先加 blocking edge。🌟 本仓改造（上游 mattpocock/skills 未含，2026-11-12 定案）：①merger **严格串行**（两 merger 禁并发，对齐单一写者收口）②merger rebase 后**重跑该票验证命令**才许 ff-only（rebase 使旧 SHA 验证作废，对齐 GitHub strict checks 语义）③收尾**必须走 PR**——删上游「无 PR 直接 report 分支」旁路，integration 命名 `integration/<spec-slug>`、推 fork 开 PR、rebase-merge 保原子提交、禁直推 main、无 PR 流程的项目停下问用户④ticket 分支 `<type>/<id>-<slug>`、清理时 worktree 与分支一起删（`git worktree remove` **不删分支**，须 `git branch -d` 且先 `merge-base --is-ancestor` 确认，禁 `-D`）⑤frontier 由 orchestrator 自跟踪（tracker blocked-by 计数 run 中途会陈旧）⑥worktree 只有 git 跟踪文件，依赖 gitignore 的验证（fixture/凭据/构建产物）须回主 checkout 复验⑦review-fix 最多两轮，第二轮仍有 issue 停下报用户。
 
 ## 6. 规划与外围技能要点
 
