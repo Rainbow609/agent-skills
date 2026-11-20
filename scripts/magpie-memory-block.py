@@ -39,15 +39,21 @@ def parse(path):
 
 
 def load():
-    out = []
+    entries = []
+    folder_of: dict[str, str] = {}
     for path in sorted(STORE.glob("m_*.md")):
         m = parse(path)
-        if m.get("status") != "active" or m.get("kind") not in KIND_HEADER:
+        if m.get("kind") not in KIND_HEADER:
             continue
         scope = m.get("scope") or "global"
-        group = None
-        if scope.startswith("project:"):
-            group = m["dirs"][-1] if m["dirs"] else scope[len("project:"):]
+        if scope.startswith("project:") and m["dirs"]:
+            folder_of[scope] = m["dirs"][-1]
+        entries.append((scope, m))
+    out = []
+    for scope, m in entries:
+        if m.get("status") != "active":
+            continue
+        group = None if scope == "global" else folder_of.get(scope, scope[len("project:"):])
         out.append((group, m))
     return out
 
