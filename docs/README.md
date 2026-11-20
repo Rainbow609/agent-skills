@@ -59,8 +59,9 @@
 
 ## 与其它记忆层的关系
 
-- **EverOS（自托管 127.0.0.1:8000）**：跨会话/跨项目记忆**唯一写入通道**（everos-memory MCP；运维与契约配方见 `everos-selfhost-operations.md`）；
+- **EverOS（自托管 127.0.0.1:8000）**：跨会话/跨项目记忆的**长台账**（episode、原子事实、profile；写入走 everos-memory MCP，运维与契约配方见 `everos-selfhost-operations.md`）；
+- **magpie 记忆**：**注入用短摘要**，只放开局必须知道的规则/偏好，由 magpie 写进各代理的指令文件；不承担台账，不与 EverOS 各存一份；
 - **各项目 `docs/`**：项目特化深度调研（带 `file:line` 证据）；
 - **本目录**：跨项目通用真源（本文件为索引）。
 
-检索顺序：EverOS → 项目 `docs/` → 本目录 → 自行调研（产物按同样顺序回写各层）。细则见仓库 `AGENTS.md`「记忆（单写 EverOS）」节与各项目 `AGENTS.md`。（Memorix 与 zcode 内置记忆已弃用仅存档，2026-10-19 起。）
+检索顺序：EverOS → 项目 `docs/` → 本目录 → 自行调研（产物按同样顺序回写各层）。细则见仓库 `AGENTS.md`「记忆（分层：EverOS 台账 + magpie 摘要）」节与各项目 `AGENTS.md`：EverOS 存长台账，magpie 只存注入用短摘要，同一件事不在两边各写一份。（Memorix 与 zcode 内置记忆已弃用仅存档，2026-10-19 起。）

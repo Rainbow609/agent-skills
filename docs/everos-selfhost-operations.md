@@ -93,7 +93,9 @@ POST /api/v2/memory/add
 
 ## 迁移原因：为什么 EverOS 成为唯一记忆通道（2026-10-18 定案，10-19 复测加固）
 
-决策时间线：2026-10-18 个人记忆库（113 条）无损迁入 EverOS、Memorix 停写、双写废除；2026-10-19 zcode 内置记忆（`~/.zcode/cli/memories/` 自动记忆）由用户关闭——单写 EverOS 定版（全局 AGENTS.md「记忆（单写 EverOS）」节）。
+决策时间线：2026-10-18 个人记忆库（113 条）无损迁入 EverOS、Memorix 停写、双写废除；2026-10-19 zcode 内置记忆（`~/.zcode/cli/memories/` 自动记忆）由用户关闭——单写 EverOS 定版。
+
+2026-11-20 **分层定版**（用户裁定）：EverOS 存**长台账**，magpie 存**注入用短摘要**，方向单向——定案与事实先落 EverOS，只有开局必须知道的规则/偏好才摘要进 magpie，同一件事不在两边各写一份。全局 AGENTS.md 该节由「记忆（单写 EverOS）」改名为「记忆（分层：EverOS 台账 + magpie 摘要）」，并补上 magpie 层的定位（此前 magpie 块教 `memory_save` 与本规则相互矛盾，是双写漂移的来源）。同日 EverOS 由 1.5.1 升至 1.7.0，五个云端面（llm/multimodal/decider/embedding/rerank）统一改走本机 magpie 网关→OpenRouter。
 
 **前任系统实测缺陷（公平复测：同主题条目两侧确证存在后，同查询双系统对测）**：
 
