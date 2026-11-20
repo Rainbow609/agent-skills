@@ -48,12 +48,36 @@ POST /api/v2/memory/add
 - **验收**：同一长条目重写，全链路零重试（episode upserted=1 / atomic_facts count=19 attempt=0 / user_profile UPDATE / flush 200）。
 - **⚠ 升级即失效**：`uv tool upgrade everos` 会把该 yaml 重置回 `enabled: false`——抽取又开始报尾逗号时先查这里。种子副本在 `~/.everos/prompt_slots/episode_extract.yaml`，恢复后 `launchctl kickstart -k gui/$(id -u)/com.rainbow.everos-server` 重启（实测 kickstart -k 干净换 pid，未触发 EngineLockHeldError）。
 - **2026-10-23 复现与边界**：prompt slot 仍为 `enabled: true` 且含 RFC 8259 严格块，但同批两条约 1500–2000 字的长中文条目仍出现尾逗号：一条连续 3 次重试失败并令 `/api/v2/memory/flush` 返回 500，另一条长条目则成功入库——**属概率性失败，不是「长条目必坏」**。拆成约 350–450 字的两条短消息后均一次成功（episode upserted=1、atomic_facts 17/11、flush 200）。处置顺序：先看 yaml 是否被升级重置；若已启用仍失败，**优先拆短重写**，不要只重启或无限重试。
+- **❌ 2026-11-20 已作废**：1.6.0 起 prompt slot 机制整体移除（自定义提示词只读包内 `config/custom_instructions/`，`~/.everos/` 覆盖仍是「未来里程碑」），1.7.0 升级后该 yaml 静默失效、只剩宿主机 3 次重试；用户裁定「接受内置提示词」，`~/.everos/prompt_slots/` 已删。**升级后再遇尾逗号故障，不要再找回这条路径**，直接拆短重写。
 
 ## everos-memory MCP 通道
 
 - 注册：`uvx everos-mcp`，env `EVEROS_BASE_URL`／`EVEROS_USER_ID`——身份由 MCP 服务端注入，工具调用无需传 user_id。
 - 🌟 `add_memory(wait=true)` 会撞 MCP 客户端约 180s 超时：等待被掐死但**抽取仍在后台继续**（本会话实测：wait 超时，数分钟后检索命中）。默认 `wait=false`，写后 1-2 分钟再 `search_memory` 验证；`list_memories` 比 `search_memory` 更早可见新条目（工具自述官方明文）。
 - `search_memory` **不暴露 method 参数**，恒走服务端默认（hybrid）——无 embedding 时该通道整体不可用（见下节）。
+
+## profile → magpie 摘要投射（固定动作，launchd 每晚 03:40）
+
+分层后的**唯一单向桥**：EverOS `user_profile`（台账派生物）→ magpie 一条摘要（开局注入）。方向铁律：只 EverOS→magpie；magpie 侧手工编辑会在下次投射被覆盖。
+
+- **脚本**：`~/git/agent-skills/scripts/everos-profile-digest.py`，仅用标准库，`/usr/bin/python3`（3.9.6，无 PyYAML）可直接跑；符号链接 `~/.local/bin/everos-profile-digest`。
+- **读**：`POST http://127.0.0.1:8000/api/v2/memory/get`，body `{user_id, memory_type:"profile", page_size:1}` → `data.profiles[0].profile_data`（JSON：`summary` / `implicit_traits[{trait,description,basis,evidence}]` / `explicit_info`），无需解析 md/YAML。用户清单来自 `~/.everos/default_app/default_project/users/` 下的目录名。
+- **写**：magpie 的 MCP HTTP 端点 `http://127.0.0.1:3425/mcp/magpie/memory`（SSE 响应，本机免 key）。先 `memory_search {tags:[everos-profile-digest]}` 找到旧条目，再 `memory_save` 带 `id` 覆盖 → 幂等，库里永远只有一条（首建 2026-11-20 `m_0983bd244a2f`，kind=preference / scope=global / origin=agent）。kind 必须是 preference/rule/fact 之一：magpie 的注入块只渲染这三类，profile 类只进库、永远不进各代理的指令文件。
+- **内容与预算**：来源是每用户的 `explicit_info` 事实（`summary` 也参与），按源序**整条**入选；与已有事实重复时只留较长的（标点归一后做包含判定），跨用户同样去重——profile 里 `summary` 往往就是某条 `explicit_info` 的浓缩版，合并后只剩一份。总长 **320 字封顶**（这条每晚进**所有代理的开局上下文**），放不下的整条丢弃，不截断成半句。`implicit_traits` 只取**证据 ≥5 条**的（最多 3 个）作为「证据充分的习惯」——trait 名是内部分类词，罗列 24 个既无信息量、又与全局规则重复。
+- **手动**：`everos-profile-digest`（写）、`--dry-run`（只打印）、`--print-id`。日志 `~/Library/Logs/everos-profile-digest.log`。
+- **调度**：`~/Library/LaunchAgents/local.magpie.profile-digest.plist`（Label `local.magpie.profile-digest`，03:40，RunAtLoad false）。重载：`launchctl bootout gui/$(id -u)/local.magpie.profile-digest; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.magpie.profile-digest.plist`；立刻验证：`launchctl kickstart -k gui/$(id -u)/local.magpie.profile-digest`。
+- **失败面**：EverOS(:8000) 或 magpie 网关(:3425) 未起 → 退出码 1、日志留 `cannot reach EverOS or Magpie`，次日 03:40 自愈，无需人工补。
+- **已知边界**：只有跑出 profile 的用户才有画像行——当前仅 `manbo-reader`；`deepseek-harness` / `git-workspace` / `knowledge-import` / `mihomo-config` 有目录无 profile，脚本跳过并记 `no profile, skipped`。
+
+## magpie 注入块（`## Memory`）的刷新
+
+指令文件里的记忆块由 magpie 写在 `<!-- magpie:begin -->` 与 `<!-- magpie:end -->` 之间，位于 `## 记忆…` 之后：
+
+- **只渲染 `preference` / `rule` / `fact` 三类 active 条目**；`procedure` / `reference` / `profile` 只进库、不注入。全局条目按 Preferences/Rules/Facts 分组，项目条目按 `sources[].dir` 分到 `When working in <dir>:` 段；每条 400 字截断，`why` 以 `(why: …)` 附后。
+- **刷新面**：`memory_save` / `memory_forget`、`magpie library sync`、`magpie library instructions set`、重启 magpie app 都**不会**重排这个块（`instructions set` 只沿用文件里已有的块）。因此记忆改动不会自动进注入，需要重排时跑 `magpie-memory-block`。
+- **重排**：`scripts/magpie-memory-block.py`（符号链接 `~/.local/bin/magpie-memory-block`），读 `~/.config/magpie/memory/m_*.md`（md 是源，`index.json` 会滞后），覆写 `~/.claude/CLAUDE.md`、`~/.codex/AGENTS.md`、`~/.omp/agent/AGENTS.md` 的 Memory 段；内容未变时不动文件。改渲染规则前先确认 magpie 侧格式未变（这是对 magpie 内部格式的复刻）。
+- **调度**：`~/Library/LaunchAgents/local.magpie.memory-block.plist`（03:45，紧跟 03:40 的 profile 投射）。日志 `~/Library/Logs/magpie-memory-block.log`。
+- **升 active**：`memory_save` 只改内容、不改 `status`，candidate 想进注入得直接改 md frontmatter 的 `status: active`（`index.json` 会滞后，以 md 为准）。
 
 ## 检索方法矩阵与软依赖设计（官方源码）
 
