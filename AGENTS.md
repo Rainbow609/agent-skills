@@ -61,6 +61,7 @@ brief 四段：**Task**（一句话）/ **Context**（2-3 句，不含完整对�
 - 保护分支（`master`/`main`/`release/*`/`hotfix/*`）禁止直接提交：先询问基底，再建 `<type>/<功能简述>` 分支
 - **upstream 陷阱**：以 `origin/<主分支>` 起分支必加 `--no-track`（否则 upstream 指向主分支，图形界面推送按钮会把代码送进保护分支）；功能分支推送一律 `git push -u origin <branch>`
 - 功能分支提交前先 `git fetch` 并 rebase 至最新主分支
+- **合并形态：阶梯式 merge（半线性）**——功能分支/票先 rebase 到最新主分支，再用 `--no-ff` merge 出 merge commit：主分支上每张票一段台阶，票边界保留、可整票 `git revert -m 1`。不用 squash、不用 rebase-merge，也不做纯线性主分支。要避免两种错法：① 各票已分别开 PR，又往上堆一个集成 merge（应先定集成方式）；② 动历史形态前没跟用户确认
 - 分组提交用 `git-commit` 技能；PR 描述与创建用 `git-pr-description` 技能（依赖 `gh` CLI）
 - Git 一律用 CLI（`git ...`），不用 MCP 工具；权限分级见 Shell 执行规则
 
