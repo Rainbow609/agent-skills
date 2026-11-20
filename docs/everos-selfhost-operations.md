@@ -69,6 +69,15 @@ POST /api/v2/memory/add
 - **失败面**：EverOS(:8000) 或 magpie 网关(:3425) 未起 → 退出码 1、日志留 `cannot reach EverOS or Magpie`，次日 03:40 自愈，无需人工补。
 - **已知边界**：只有跑出 profile 的用户才有画像行——当前仅 `manbo-reader`；`deepseek-harness` / `git-workspace` / `knowledge-import` / `mihomo-config` 有目录无 profile，脚本跳过并记 `no profile, skipped`。
 
+## magpie 注入块（`## Memory`）的刷新
+
+指令文件里的记忆块由 magpie 写在 `<!-- magpie:begin -->` 与 `<!-- magpie:end -->` 之间，位于 `## 记忆…` 之后：
+
+- **只渲染 `preference` / `rule` / `fact` 三类 active 条目**；`procedure` / `reference` / `profile` 只进库、不注入。全局条目按 Preferences/Rules/Facts 分组，项目条目按 `sources[].dir` 分到 `When working in <dir>:` 段；每条 400 字截断，`why` 以 `(why: …)` 附后。
+- **刷新面**：`memory_save` / `memory_forget`、`magpie library sync`、`magpie library instructions set`、重启 magpie app 都**不会**重排这个块（`instructions set` 只沿用文件里已有的块）。因此记忆改动不会自动进注入，需要重排时跑 `magpie-memory-block`。
+- **重排**：`scripts/magpie-memory-block.py`（符号链接 `~/.local/bin/magpie-memory-block`），读 `~/.config/magpie/memory/m_*.md`（md 是源，`index.json` 会滞后），覆写 `~/.claude/CLAUDE.md`、`~/.codex/AGENTS.md`、`~/.omp/agent/AGENTS.md` 的 Memory 段；内容未变时不动文件。改渲染规则前先确认 magpie 侧格式未变（这是对 magpie 内部格式的复刻）。
+- **调度**：`~/Library/LaunchAgents/local.magpie.memory-block.plist`（03:45，紧跟 03:40 的 profile 投射）。日志 `~/Library/Logs/magpie-memory-block.log`。
+
 ## 检索方法矩阵与软依赖设计（官方源码）
 
 | method | 硬依赖 | embedding 缺席时 |
