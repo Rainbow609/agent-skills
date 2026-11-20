@@ -77,6 +77,7 @@ POST /api/v2/memory/add
 - **刷新面**：`memory_save` / `memory_forget`、`magpie library sync`、`magpie library instructions set`、重启 magpie app 都**不会**重排这个块（`instructions set` 只沿用文件里已有的块）。因此记忆改动不会自动进注入，需要重排时跑 `magpie-memory-block`。
 - **重排**：`scripts/magpie-memory-block.py`（符号链接 `~/.local/bin/magpie-memory-block`），读 `~/.config/magpie/memory/m_*.md`（md 是源，`index.json` 会滞后），覆写 `~/.claude/CLAUDE.md`、`~/.codex/AGENTS.md`、`~/.omp/agent/AGENTS.md` 的 Memory 段；内容未变时不动文件。改渲染规则前先确认 magpie 侧格式未变（这是对 magpie 内部格式的复刻）。
 - **调度**：`~/Library/LaunchAgents/local.magpie.memory-block.plist`（03:45，紧跟 03:40 的 profile 投射）。日志 `~/Library/Logs/magpie-memory-block.log`。
+- **升 active**：`memory_save` 只改内容、不改 `status`，candidate 想进注入得直接改 md frontmatter 的 `status: active`（`index.json` 会滞后，以 md 为准）。
 
 ## 检索方法矩阵与软依赖设计（官方源码）
 
