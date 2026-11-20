@@ -35,9 +35,10 @@ TAG = "everos-profile-digest"
 MARKER = "EverOS profile 自动投射"  # identifies the digest entry
 KIND = "profile"
 SCOPE = "global"
-MAX_TRAITS = 24
-MAX_SUMMARY = 60
-MAX_TEXT = 1200
+MAX_TEXT = 320
+MAX_FACT = 80
+MAX_TRAITS = 3
+MIN_TRAIT_EVIDENCE = 5
 
 
 def log(msg: str, *, quiet: bool = False) -> None:
@@ -118,37 +119,79 @@ def fetch_profile(user_id: str) -> dict | None:
 
 def shorten(text: str, limit: int) -> str:
     text = re.sub(r"\s+", " ", str(text)).strip()
+    text = text.rstrip("。．.；;，, ")
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+PUNCT = re.compile(r"[\s。．.，,；;：:、]+")
+
+
+def norm(text: str) -> str:
+    return PUNCT.sub("", str(text))
+
+
+def merge_facts(facts: list[str]) -> list[str]:
+    """Collapse facts that restate each other, keeping the longer wording.
+
+    Profiles store the same statement twice (``summary`` and the
+    ``explicit_info`` entry it was condensed from), so containment on
+    punctuation-stripped text is enough — no fuzzy matching needed.
+    """
+    kept: list[str] = []
+    for fact in facts:
+        key = norm(fact)
+        if not key or any(key in norm(k) for k in kept):
+            continue
+        kept = [k for k in kept if norm(k) not in key]
+        kept.append(fact)
+    return kept
+
+
 def build_digest(today: str) -> tuple[str, int]:
-    trait_counts: dict[str, int] = {}
-    lines: list[str] = []
-    seen = 0
+    users: list[tuple[str, dict]] = []
     for uid in user_ids():
         profile = fetch_profile(uid)
         if not profile:
             log(f"  {uid}: no profile, skipped")
             continue
-        seen += 1
-        for trait in profile.get("implicit_traits") or []:
-            name = str(trait.get("trait") or "").strip()
-            if name:
-                trait_counts[name] = trait_counts.get(name, 0) + 1
-        summary = shorten(profile.get("summary") or "", MAX_SUMMARY)
-        lines.append(f"- {uid}: {summary}" if summary else f"- {uid}")
+        users.append((uid, profile))
 
-    if not seen:
+    if not users:
         raise SystemExit("no EverOS profiles found — nothing to project")
 
-    traits = sorted(trait_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:MAX_TRAITS]
-    text = f"{MARKER}（{today}）：\n"
-    if traits:
-        text += "跨项目默认：" + "、".join(name for name, _ in traits) + "\n"
-    text += "项目画像：\n" + "\n".join(lines)
-    if len(text) > MAX_TEXT:
-        text = text[: MAX_TEXT - 1].rstrip() + "…"
-    return text, len(traits)
+    multi = len(users) > 1
+    facts: list[str] = []
+    traits: list[str] = []
+    for uid, profile in users:
+        for item in profile.get("explicit_info") or []:
+            desc = shorten(item.get("description") or "", MAX_FACT)
+            if desc:
+                facts.append(f"{uid}：{desc}" if multi else desc)
+        if profile.get("summary"):
+            facts.append(f"{uid}：{shorten(profile['summary'], MAX_FACT)}" if multi
+                         else shorten(profile["summary"], MAX_FACT))
+        for trait in profile.get("implicit_traits") or []:
+            name = str(trait.get("trait") or "").strip()
+            strong = len(trait.get("evidence") or []) >= MIN_TRAIT_EVIDENCE
+            if name and strong and name not in traits:
+                traits.append(name)
+
+    merged = merge_facts(facts)
+    traits = traits[:MAX_TRAITS]
+
+    head = f"{MARKER}（{today}）\n"
+    tail = ("\n证据充分的习惯：" + "、".join(traits)) if traits else ""
+    budget = MAX_TEXT - len(head) - len(tail)
+    body, kept = [], 0
+    for fact in merged:
+        piece = ("；" if kept else "") + fact
+        if len("".join(body)) + len(piece) > budget:
+            break
+        body.append(piece)
+        kept += 1
+    if not body:
+        raise SystemExit("profile has no facts to project")
+    return head + "".join(body) + tail, kept
 
 
 def find_existing() -> str | None:
@@ -181,7 +224,7 @@ def main(argv: list[str]) -> int:
     text, n_traits = build_digest(dt.date.today().isoformat())
     if args.dry_run:
         print(text)
-        log(f"(dry run: {len(text)} chars, {n_traits} traits)")
+        log(f"(dry run: {len(text)} chars, {n_traits} facts)")
         return 0
 
     existing = find_existing()
@@ -198,7 +241,7 @@ def main(argv: list[str]) -> int:
     reply = tool_text(result)
     if result.get("isError"):
         raise SystemExit(f"memory_save failed: {reply}")
-    log(f"{'updated' if existing else 'created'} digest ({len(text)} chars, {n_traits} traits): {reply}")
+    log(f"{'updated' if existing else 'created'} digest ({len(text)} chars, {n_traits} facts): {reply}")
 
     if args.print_id:
         match = re.search(r"m_[0-9a-f]{12}", reply)
