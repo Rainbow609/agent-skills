@@ -33,7 +33,7 @@ USERS_DIR = Path.home() / ".everos/default_app/default_project/users"
 
 TAG = "everos-profile-digest"
 MARKER = "EverOS profile 自动投射"  # identifies the digest entry
-KIND = "profile"
+KIND = "preference"
 SCOPE = "global"
 MAX_TEXT = 320
 MAX_FACT = 80
@@ -179,8 +179,8 @@ def build_digest(today: str) -> tuple[str, int]:
     merged = merge_facts(facts)
     traits = traits[:MAX_TRAITS]
 
-    head = f"{MARKER}（{today}）\n"
-    tail = ("\n证据充分的习惯：" + "、".join(traits)) if traits else ""
+    head = f"{MARKER}（{today}）："
+    tail = ("。证据充分的习惯：" + "、".join(traits) + "。") if traits else "。"
     budget = MAX_TEXT - len(head) - len(tail)
     body, kept = [], 0
     for fact in merged:
