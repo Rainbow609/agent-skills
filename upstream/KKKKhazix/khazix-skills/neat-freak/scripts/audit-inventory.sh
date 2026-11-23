@@ -48,14 +48,14 @@ printf 'generated_at=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 section "platform-directories"
 # Common agent home dirs; nonexistent ones are skipped silently.
-for dir in "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor" "$HOME/.gemini" \
+for dir in "$HOME/.agents" "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor" "$HOME/.gemini" \
   "$HOME/.qoder" "$HOME/.trae" "$HOME/.iflow" "$HOME/.codebuddy"; do
   [[ -d "$dir" ]] && printf '%s\n' "$dir"
 done
 
 section "other-agent-rule-artifacts"
 # Platform-specific rule forms at the project root (existence only).
-for rel in .cursorrules .windsurfrules .cursor/rules .qoder .trae .iflow; do
+for rel in .claude/rules .claude/skills .agents/skills .github/copilot-instructions.md .github/instructions .cursorrules .windsurfrules .cursor/rules .qoder .trae .iflow; do
   [[ -e "$PROJECT_ROOT/$rel" ]] && printf '%s\n' "$PROJECT_ROOT/$rel"
 done
 true
@@ -75,7 +75,7 @@ fi
 section "rule-chain-candidates"
 cursor="$PROJECT_ROOT"
 while :; do
-  for rel in AGENTS.override.md AGENTS.md CLAUDE.md CLAUDE.local.md .claude/CLAUDE.md; do
+  for rel in AGENTS.override.md AGENTS.md CLAUDE.md CLAUDE.local.md .claude/CLAUDE.md GEMINI.md; do
     describe_rule_file "$cursor/$rel"
   done
   [[ "$cursor" == "/" ]] && break
@@ -86,7 +86,8 @@ done
 for file in \
   "$HOME/.codex/AGENTS.override.md" \
   "$HOME/.codex/AGENTS.md" \
-  "$HOME/.claude/CLAUDE.md"; do
+  "$HOME/.claude/CLAUDE.md" \
+  "$HOME/.gemini/GEMINI.md"; do
   describe_rule_file "$file"
 done
 

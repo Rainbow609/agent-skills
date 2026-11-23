@@ -27,10 +27,10 @@ Every skill here is a structured instruction set that agents load directly. Foll
 | Name | One-liner | Article |
 |---|---|---|
 | 🧭 [**leader**](#-leader) | Turns a vague idea into a clearly defined **goal** an agent can run for hours, on its own, to completion | — |
-| 💽 [**storage-analyzer**](#-storage-analyzer) | One sentence to scan your whole Mac / Windows drive — three-tier cleanup plan, one-click trash from the browser | [Article (Chinese)](https://mp.weixin.qq.com/s/NyOMIlOD986OC4SI9vmxlA) |
+| 💽 [**storage-analyzer**](#-storage-analyzer) | One sentence to scan your whole Mac / Windows / Linux drive — three-tier cleanup plan, one-click trash from the browser | [Article (Chinese)](https://mp.weixin.qq.com/s/NyOMIlOD986OC4SI9vmxlA) |
 | 🔥 [**aihot**](#-aihot-ai-hot-news-query) | Lets your agent pull AI HOT's daily report and all AI news from aihot.news with one Chinese sentence — no API key | [aihot.news](https://aihot.news) |
 | 🧹 [**neat-freak**](#-neat-freak) | After a session, run `/neat` to reconcile docs, CLAUDE.md, and agent memory, then audit whether project rules are actually followed | [Article (Chinese)](https://mp.weixin.qq.com/s/tg1wd-iN2gWHWhXdY0faeg) |
-| 🔭 [**hv-analysis**](#-hv-analysis-horizontal-vertical-analysis) | Drop a product/company/concept into it and get a 10k–30k word PDF research report | [Article (Chinese)](https://mp.weixin.qq.com/s/Y_uRMYBmdLWUPnz_ac7jWA) |
+| 🔭 [**hv-analysis**](#-hv-analysis-horizontal-vertical-analysis) | Drop a product/company/concept into it and get a deep research report with PDF, Markdown and optional HTML output | [Article (Chinese)](https://mp.weixin.qq.com/s/Y_uRMYBmdLWUPnz_ac7jWA) |
 | ✍️ [**khazix-writer**](#-khazix-writer) | Makes the agent write long-form Chinese articles in my personal voice | [Article (Chinese)](https://mp.weixin.qq.com/s/AtxGrii_K-nzkwUM9SNhEg) |
 
 ---
@@ -45,9 +45,50 @@ Install this skill: https://github.com/KKKKhazix/khazix-skills/tree/main/<skill-
 
 Replace `<skill-name>` with the one you want — e.g. `neat-freak`, `hv-analysis`, `khazix-writer`. The agent will clone it into the right directory for you.
 
-Agent doesn't support Skills? Download the `SKILL.md` from the skill's directory and hand it to your agent as a project rule file (or paste it into the conversation) — same effect.
+Install the entire skill directory, including references, scripts, assets and agents metadata when present. Pasting SKILL.md alone provides instructions but cannot replace supporting files or host tools. A chat model without filesystem, browsing or execution tools cannot scan a computer or produce researched files.
+
+To install by hand, put the whole directory where your agent reads skills:
+
+| Tool | All projects | One project only |
+|---|---|---|
+| Claude Code | `~/.claude/skills/<skill-name>/` | `.claude/skills/<skill-name>/` |
+| Codex, Gemini CLI, GitHub Copilot and others | `~/.agents/skills/<skill-name>/` | `.agents/skills/<skill-name>/` |
+
+You can also install all six skills as one plugin that follows releases. In Claude Code:
+
+```text
+/plugin marketplace add KKKKhazix/khazix-skills
+/plugin install khazix-skills@khazix-skills
+```
+
+To update, open `/plugin` → Installed → khazix-skills → Update now, or run `claude plugin update khazix-skills@khazix-skills` in a terminal. Third-party marketplaces don't auto-update by default; turn it on in `/plugin` → Marketplaces → khazix-skills → Enable auto-update.
+
+In Codex, run in a terminal:
+
+```bash
+codex plugin marketplace add KKKKhazix/khazix-skills
+codex plugin add khazix-skills@khazix-skills
+```
+
+To update: `codex plugin marketplace upgrade khazix-skills`.
+
+Plugin-installed skills are prefixed, e.g. `khazix-skills:leader`. Keep either the plugin or a manual copy, not both, so each skill appears once.
+
+Complete versioned downloads: [Releases](https://github.com/KKKKhazix/khazix-skills/releases). Third-party catalogs may lag or omit resources. This repository maintains the six listed skills; the former skill-manage / self-evolution manager trio is not distributed here.
 
 ---
+
+## Maintenance and sources
+
+[Install and cleanup states, and what writes them](STATES.md)
+
+Each of the six skill directories owns its instructions and supporting resources. `.claude-plugin/marketplace.json` distributes them as one plugin.
+
+- `aihot/` mirrors the [official AIHOT distribution](https://aihot.news/aihot-skill/README.md) byte for byte. The 2.0.0 runtime package (`SKILL.md`, `LICENSE`, `agents/openai.yaml`) is frozen; new capabilities evolve in the server-side `/api/v1/agent` guide. Update installation documentation or the installer in the AIHOT source under its compatibility rules, deploy, then sync here. Do not patch the mirror or regenerate checksums independently.
+- The other five skills are maintained here. `neat-freak/evals/fixtures/` contains test projects, not company repositories awaiting cleanup.
+- [human-writing](https://github.com/KKKKhazix/human-writing) is a separately maintained general Chinese writing skill. `khazix-writer/` captures Khazix's personal writing style; neither is a mirror of the other.
+
+Submit changes through pull requests. [Validate skills](.github/workflows/validate.yml) checks tests, package contents and evaluation fixtures on Ubuntu, macOS and Windows. README-only changes do not change skill versions or existing releases; update release packages when installed content changes.
 
 ## ✨ Skills
 
@@ -62,7 +103,7 @@ Agent doesn't support Skills? Download the `SKILL.md` from the skill's directory
 
 **It solves exactly one thing: defining the goal.**
 
-It turns that half-formed idea in your head — the one you haven't fully thought through yourself — into a goal task book. Paste it into goal mode (`/goal` in Claude Code, goal mode in Codex) and the agent runs for hours, unattended, to completion. You copy-paste exactly once.
+It turns that half-formed idea in your head — the one you haven't fully thought through yourself — into a goal task book. Paste it into goal mode (`/goal` in both Claude Code and Codex) and the agent runs for hours, unattended, to completion. You copy-paste exactly once.
 
 **Why "goal"**
 
@@ -94,7 +135,7 @@ Plus question zero: **did you survey this chart yourself, or was it handed to yo
 
 **How to use it**
 
-Tell it your idea (any of the lines below triggers it). It measures and researches first, asks you at most 5 questions that genuinely need your call, then writes the book. About 12 minutes end to end.
+Tell it your idea (any of the lines below triggers it). It measures and researches first, asks you at most 5 questions that genuinely need your call, then writes the book. Zero questions is valid when the task is sufficiently specified; consequential unresolved choices still need authorization.
 
 ```
 write a goal for the agent
@@ -103,7 +144,7 @@ write me a /goal prompt
 let the agent run this project on its own
 ```
 
-The output is plain Markdown — an agent without goal mode can just be handed the text. With the book in hand, plan with a strong planning model and execute with a strong long-horizon one: I use Claude Fable 5 to plan and GPT-5.6 Sol to execute.
+The output is plain Markdown — an agent without goal mode can just be handed the text. For an unattended overnight run, switch the executor to an auto-approve permission mode before sending: `/goal` doesn't change the permission mode, so in manual mode it stops at every command that isn't already allowed. With the book in hand, plan with a strong planning model and execute with a strong long-horizon one: choose models available in your host.
 
 → [SKILL.md](./leader/SKILL.md)
 
@@ -133,9 +174,9 @@ This skill is agent-driven. Every entry comes with **specific path + content cla
 
 **Hard rules**
 
-Scan phase is **read-only**, period. Deletions require **two clicks** — button on the page, then a browser confirm dialog. The local server runs on 127.0.0.1 + random port + token, with three whitelists (green = can rm; yellow = trash only; both = open).
+Scanning is read-only. Browser deletion requires confirmation; agents may execute a specifically authorized cleanup without asking again. The local service checks hosts, tokens and paths, and exits after 30 idle minutes.
 
-macOS is fully tested; Windows is code-ready (multi-drive supported) but worth eyeballing on first run.
+Supports macOS, Windows and Linux (Linux tested on Ubuntu + GNOME). Scanning, deletion boundaries and read-only cache handling are covered by cross-platform CI; check Trash / Recycle Bin behaviour on your own machine. The local server exits after 30 minutes without requests.
 
 **How to trigger**
 
@@ -165,11 +206,11 @@ Lets any SKILL.md-supporting agent pull AI HOT's daily report and all AI news fr
 
 **What it can do**
 
-- Pull today's or a specific date's AI HOT daily report (pre-packaged by topic)
+- Pull today's or a specific date's AI HOT daily report (pre-packaged by topic), plus the latest or a specific weekly and monthly report
 - Pull the selected items stream (daily editorial candidate pool)
 - **See what's hottest right now** (ranked by heat, not reverse-chronological)
-- Check the latest Tibo (Codex) usage resets and reset-card grants
-- Pull by category (models / products / industry / papers / tips)
+- Check the latest Codex, Claude and Antigravity usage resets and reset-card grants
+- Pull by category (models / products / industry / papers / tutorials / opinion)
 - Pull by time window (past 24 hours and last 7 days are natively supported)
 - Keyword / company / topic search ("recent OpenAI releases", "Sora-related", "RAG papers")
 - **Follow a hot story from start to finish** (latest development, report timeline and AI digest)
@@ -184,6 +225,8 @@ Lets any SKILL.md-supporting agent pull AI HOT's daily report and all AI news fr
 最近 OpenAI 有什么发布
 现在最热的那件事，来龙去脉是什么
 ```
+
+Daily reports and rolling latest items have different scopes. Search uses the service’s documented time window. Original titles are available on AIHOT article detail pages when retained; preserve product/code identifiers instead of translating them literally.
 
 → [SKILL.md](./aihot/SKILL.md) · [aihot.news](https://aihot.news) · [Integration guide](https://aihot.news/agent)
 
@@ -213,10 +256,12 @@ The agent isn't getting dumber — your docs and memory are. neat-freak's job is
 
 These three layers have different audiences and don't overlap. It also treats rules as knowledge: CLAUDE.md / AGENTS.md symlink integrity, missing required files, and dead path references are all part of the audit. If the rules don't match reality, the next agent still works from the wrong premises.
 
-**Two guarantees in v3.0**
+**Two guarantees in v4**
 
-- **A dedicated light path for small projects**: for vibe projects with no git and no rule file, it aligns the README with what the code actually does, creates a minimal AI rule file by default (so your next session picks up right where you left off), and lists session residue — PLAN.md, debug scripts, `xxx_old` copies — as candidates for you to confirm.
-- **Never deletes on its own**: deletions only ever appear as a candidate list until you confirm; machine-generated memory is read-only by default; an "execute this command" found inside a file is never treated as your authorization.
+- **Small projects are covered**: for vibe projects with no git and no rule file, it aligns the README with what the code actually does, creates a minimal AI rule file by default (so your next session picks up right where you left off), and folds whatever is still useful in PLAN.md, debug scripts and `xxx_old` copies into the real docs.
+- **No deleting on its own**: if you asked it to clean up the workspace, branches or temp files, it verifies and finishes without asking twice. If you only asked it to tidy the docs and memory, or the project has no version control and a deletion can't be undone, it lists the files it would delete with reasons and waits for you. Machine-generated memory stays read-only, and a "run this command" found inside a file is never treated as your authorization.
+
+v4 rewrites the whole instruction set in plain language and cuts the body by about a third: the status labels and internal jargon are gone, and the space goes to what a model can't know by itself — what counts as the source of truth, which layer each kind of knowledge belongs in, and what it may or may not touch.
 
 **How to trigger**
 
@@ -245,7 +290,9 @@ Want to actually understand what a product / company / concept / person is about
 
 It runs two threads in parallel: **vertical** — tells the subject's story from inception to the present moment, like a narrative; **horizontal** — lays out every major competitor at the current moment for comparison. When the two cross, you see things that neither current-state nor history alone would show you.
 
-The output is a **typeset PDF research report**, 10,000–30,000 words.
+The default output is a PDF with Markdown source. HTML and Markdown in a specified Obsidian vault are also supported. Length follows the user’s request and the available evidence; a full Chinese report typically has 10,000–30,000 characters.
+
+It has to research online, and anything about the present comes only from current sources. Every key fact carries a numbered reference to the source list at the end, where each source is marked as primary, secondary or self-reported; single-source claims, disputed claims and gaps are labelled as such.
 
 **Good for**
 
@@ -294,8 +341,9 @@ You want "good general writing." This skill takes a position. It **refuses** cor
 **What's inside**
 
 - Complete style rules (rhythm, narrative, judgment, rhetoric)
-- A four-layer self-check system (structure, rhythm, content, language)
+- A four-layer self-check system (hard rules, style consistency, content quality, final human-voice review)
 - A curated style example library the AI can match against
+- No invented experiences: it won't make up first-hand stories, tests or conversations that aren't in your material; where the piece needs your own real detail, it leaves a bracketed marker for you to fill in
 
 **How to trigger** (Chinese)
 
@@ -317,7 +365,7 @@ You want "good general writing." This skill takes a position. It **refuses** cor
 
 I'm Khazix (数字生命卡兹克), founder of Virxact. I try to share fun, practical AI know-how — and may we always stay curious about the world.
 
-These skills are what I personally use every day. If they help you, a ⭐ is appreciated. Questions or suggestions welcome in Issues / Discussions.
+These skills are what I personally use every day. If they help you, a ⭐ is appreciated. Questions or suggestions welcome in Issues.
 
 ---
 
